@@ -9,6 +9,13 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.terrible_sven.fresszettel.domain.orderbatch.OrderBatch;
+import com.terrible_sven.fresszettel.domain.restaurant.Restaurant;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -26,4 +33,10 @@ public class User {
 
 	@Column(length = 255)
 	private String token;
+
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Restaurant> restaurants = new ArrayList<>();
+
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<OrderBatch> orderBatches = new ArrayList<>();
 }

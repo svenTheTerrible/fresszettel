@@ -8,6 +8,11 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.terrible_sven.fresszettel.domain.orderbatch.OrderBatch;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+
 @Entity
 @Table(name = "orders")
 @Getter
@@ -20,7 +25,9 @@ public class Order {
 
 	private String name;
 
-	private Long orderBatchId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "orderBatchId")
+	private OrderBatch orderBatch;
 
 	private Integer quantity;
 
