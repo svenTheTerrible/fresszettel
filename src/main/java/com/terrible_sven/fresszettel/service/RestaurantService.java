@@ -2,7 +2,9 @@ package com.terrible_sven.fresszettel.service;
 
 import com.terrible_sven.fresszettel.controller.dto.CreateRestaurantRequest;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemInput;
+import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
 import com.terrible_sven.fresszettel.controller.dto.UpdateRestaurantRequest;
+import com.terrible_sven.fresszettel.controller.dto.RestaurantSummary;
 import com.terrible_sven.fresszettel.domain.menuitem.MenuItem;
 import com.terrible_sven.fresszettel.domain.menuitem.MenuItemRepository;
 import com.terrible_sven.fresszettel.domain.restaurant.Restaurant;
@@ -15,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -50,6 +53,7 @@ public class RestaurantService {
 		Restaurant restaurant = restaurantRepository.findOwnedById(request.restaurantId(), userId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
 		restaurant.setName(request.name());
+		restaurant.setTimestamp(LocalDateTime.now());
 		restaurantRepository.save(restaurant);
 		Set<Long> keptMenuItemIds = new HashSet<>();
 		for (MenuItemInput input : request.menuItems()) {
@@ -78,5 +82,19 @@ public class RestaurantService {
 				menuItemRepository.delete(existing);
 			}
 		}
+	}
+
+	@Transactional(readOnly = true)
+	public List<RestaurantSummary> listRestaurants(Long userId) {
+		return restaurantRepository.findOwnedByUserWithCounts(userId);
+	}
+
+	@Transactional(readOnly = true)
+	public List<MenuItemView> listMenuItems(Long restaurantId, Long userId) {
+		restaurantRepository.findOwnedById(restaurantId, userId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+		return menuItemRepository.findAllByRestaurantId(restaurantId).stream()
+			.map(menuItem -> new MenuItemView(menuItem.getId(), menuItem.getOrderNumber(), menuItem.getName(), menuItem.getPrice()))
+			.toList();
 	}
 }
