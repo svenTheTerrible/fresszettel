@@ -1,23 +1,31 @@
 # AGENTS.md
 
 ## Project
-fresszettel — Spring Boot 4.1.1 web app. Java 25 (pom), Maven wrapper (`./mvnw`), package `com.terrible_sven.fresszettel`. Stack: Spring WebMVC, Security, Data JPA (Hibernate ORM 7), SQLite (sqlite-jdbc, runtime scope), Lombok.
+fresszettel — Spring Boot 4.1.1 web app (REST + JWT auth). Maven wrapper `./mvnw`, Java release **25** (`pom.xml`), Hibernate ORM 7.4. Stack: WebMVC, Security, Data JPA, SQLite (`sqlite-jdbc`, runtime scope), Lombok, jjwt 0.12.x for tokens.
+
+Package vs groupId differ — both are intentional: Maven `groupId` is hyphenated `com.terrible-sven`, the Java package is underscored `com.terrible_sven.fresszettel`. Don't "fix" either to match.
 
 ## Commands
-- Test: `./mvnw test`
-- Run: `./mvnw spring-boot:run` (port in `src/main/resources/application.properties`)
-- Package fat jar: `./mvnw package`; native image via `-Pnative` / `./mvnw native:compile -Pnative`
+- Test: `./mvnw test` (current state passes — BUILD SUCCESS).
+- Run single test class: `./mvnw -Dtest=FresszettelApplicationTests test`.
+- Run: `./mvnw spring-boot:run` (port in `src/main/resources/application.properties`).
+- Package fat jar: `./mvnw package`; native image via `./mvnw native:compile` (there is **no** `-Pnative` profile defined in the pom — don't pass it).
 
 ## Gotchas
-- **The default test fails out of the box and this is expected.** `FresszettelApplicationTests.contextLoads()` throws "Unable to determine Dialect for SQLite" because Hibernate ORM 7 ships no built-in SQLite dialect and no datasource URL is set. Compilation works fine — only JPA/context boot fails, until a SQLite dialect + `spring.datasource.url` are added. While scaffolding, treat this as the known scaffold gap, not broken code.
-- Package name has an underscore: `com.terrible_sven.fresszettel` (the hyphenated form was invalid). Keep it; do not "correct" to a hyphen.
-- Lombok is wired via annotation-processor paths in `pom.xml` — keep it on the compile+test classpath, don't drop it as an unused optional dep.
+- The SQLite dialect comes from the `hibernate-community-dialects` dependency; JPA boot requires both `spring.datasource.url` and `spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect` in `application.properties`. Remove those and the context fails again with "Unable to determine Dialect for SQLite".
+- Lombok is wired via annotation-processor paths in the compiler plugin (compile **and** testCompile). Keep it on both classpaths; don't drop it as an unused optional dep.
+- System JDK may be newer than 25 — building/running still work, no action needed.
+- SQLite is an embedded file DB (`db/database.db`, created relative to the working dir); `ddl-auto=update`, no migration tooling.
+
+## Architecture
+Layered packages under `com.terrible_sven.fresszettel`:
+- `controller/` (+ `controller/dto/`) — REST endpoints; only `AuthController` so far with `CreateUserRequest`/`LoginRequest`/`AuthResponse`.
+- `service/` — `UserService` (create/authenticate/token wiring), `JwtService`, `InvalidCredentialsException`.
+- `domain/<aggregate>/` — JPA entities + `<Entity>Repository` interfaces, grouped by aggregate: `user`, `restaurant`, `order`, `orderbatch`, `menuitem`. Entities use Lombok `@Getter/@Setter`; IDs are `IDENTITY`-generated Longs.
+- `config/AppConfig` — beans (currently the BCrypt `PasswordEncoder`).
+
+Auth is JWT (HMAC via jjwt); secret + token TTLs load from `${jwt.secret}` / `${jwt.*-ttl}` in `application.properties` and are env-overridable. No custom security config class exists yet, so Spring Security's defaults (in-memory user details) are active — add a `*Security*.java` when you need to override it.
 
 ## Layout
-- Entry point: `src/main/java/com/terrible_sven/fresszettel/FresszettelApplication.java`. No controllers or entities yet — this is a fresh scaffold; don't go hunting for packages that don't exist.
+- Entry point: `src/main/java/com/terrible_sven/fresszettel/FresszettelApplication.java`.
 - Tests: `src/test/java/com/terrible_sven/fresszettel/`.
-
-## Toolchain notes
-- System JDK is 26 while pom targets release 25 — building and running work, no action needed.
-- Hibernate enhancement + GraalVM native plugins are bound in the build; use `-Pnative` for native profiles.
-- SQLite is an embedded file DB (no separate service); no migration tooling configured.
