@@ -24,8 +24,12 @@ public class MenuItem {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+
+	@Column(name="restaurant_id")
+	private Long restaurantId;
+
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "restaurant_id")
+	@JoinColumn(name = "restaurant_id", insertable = false, updatable = false)
 	private Restaurant restaurant;
 
 	private String orderNumber;
