@@ -7,13 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtService {
 
-	private final Key key;
+	private final javax.crypto.SecretKey key;
 	private final long accessTokenTtlMillis;
 	private final long refreshTokenTtlMillis;
 
@@ -24,6 +23,10 @@ public class JwtService {
 		this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 		this.accessTokenTtlMillis = parseTtl(accessTokenTtl);
 		this.refreshTokenTtlMillis = parseTtl(refreshTokenTtl);
+	}
+
+	public javax.crypto.SecretKey key() {
+		return key;
 	}
 
 	public String createAccessToken(User user) {
