@@ -8,6 +8,7 @@ import com.terrible_sven.fresszettel.service.RestaurantService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.bind.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,5 +42,10 @@ public class UserController {
 	@GetMapping("menuItems/{restaurantId}")
 	public List<MenuItemView> menuItems(@PathVariable Long restaurantId, @AuthenticationPrincipal Long userId) {
 		return restaurantService.listMenuItems(restaurantId, userId);
+	}
+
+	@DeleteMapping("deleteRestaurant/{restaurantId}")
+	public void deleteRestaurant(@AuthenticationPrincipal Long userId, @PathVariable Long restaurantId) {
+		restaurantService.deleteRestaurant(restaurantId, userId);
 	}
 }
