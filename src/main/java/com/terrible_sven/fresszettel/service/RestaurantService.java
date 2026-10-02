@@ -89,6 +89,14 @@ public class RestaurantService {
 		return restaurantRepository.findOwnedByUserWithCounts(userId);
 	}
 
+	@Transactional
+	public void deleteRestaurant(Long restaurantId, Long userId) {
+		restaurantRepository.findOwnedById(restaurantId, userId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+        menuItemRepository.deleteAll(menuItemRepository.findAllByRestaurantId(restaurantId));
+		restaurantRepository.deleteById(restaurantId);
+	}
+
 	@Transactional(readOnly = true)
 	public List<MenuItemView> listMenuItems(Long restaurantId, Long userId) {
 		restaurantRepository.findOwnedById(restaurantId, userId)
