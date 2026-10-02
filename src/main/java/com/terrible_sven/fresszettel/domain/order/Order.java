@@ -1,17 +1,10 @@
 package com.terrible_sven.fresszettel.domain.order;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import com.terrible_sven.fresszettel.domain.orderbatch.OrderBatch;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 
 @Entity
 @Table(name = "orders")
@@ -25,8 +18,11 @@ public class Order {
 
 	private String name;
 
+	@Column(name="orderBatchId")
+	private Long orderBatchId;
+
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "orderBatchId")
+	@JoinColumn(name = "orderBatchId", insertable = false, updatable = false)
 	private OrderBatch orderBatch;
 
 	private Integer quantity;
