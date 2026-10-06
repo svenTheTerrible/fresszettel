@@ -1,9 +1,12 @@
 package com.terrible_sven.fresszettel.controller;
 
+import com.terrible_sven.fresszettel.controller.dto.CreateInvitationRequest;
 import com.terrible_sven.fresszettel.controller.dto.CreateRestaurantRequest;
+import com.terrible_sven.fresszettel.controller.dto.InvitationSummary;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
 import com.terrible_sven.fresszettel.controller.dto.RestaurantSummary;
 import com.terrible_sven.fresszettel.controller.dto.UpdateRestaurantRequest;
+import com.terrible_sven.fresszettel.service.OrderService;
 import com.terrible_sven.fresszettel.service.RestaurantService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
 	private final RestaurantService restaurantService;
+	private final OrderService orderService;
 
 	@PostMapping("createRestaurant")
 	public void createRestaurant(@AuthenticationPrincipal Long userId, @RequestBody CreateRestaurantRequest request) {
@@ -47,5 +51,15 @@ public class UserController {
 	@DeleteMapping("deleteRestaurant/{restaurantId}")
 	public void deleteRestaurant(@AuthenticationPrincipal Long userId, @PathVariable Long restaurantId) {
 		restaurantService.deleteRestaurant(restaurantId, userId);
+	}
+
+	@PostMapping("createInvitation")
+	public InvitationSummary createInvitation(@AuthenticationPrincipal Long userId, @RequestBody CreateInvitationRequest request) {
+		return orderService.createInvitation(request, userId);
+	}
+
+	@GetMapping("listInvitations")
+	public List<InvitationSummary> listInvitations(@AuthenticationPrincipal Long userId) {
+		return orderService.listInvitations(userId);
 	}
 }

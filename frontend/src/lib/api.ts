@@ -93,3 +93,28 @@ export async function fetchUpdateRestaurant(
     body: JSON.stringify(request),
   });
 }
+
+/** Body for `POST /api/user/createInvitation`. */
+export interface CreateInvitationRequest {
+  restaurantId: number;
+  /** ISO local date-time (no timezone offset). */
+  validFrom: string;
+  /** ISO local date-time (no timezone offset). */
+  validUntil: string;
+}
+
+/** `POST /api/user/createInvitation` — create a new order batch. */
+export async function fetchCreateInvitation(
+  request: CreateInvitationRequest,
+): Promise<Response> {
+  return apiFetch('/api/user/createInvitation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+}
+
+/** `GET /api/user/listInvitations` — the logged-in user's order batches. */
+export async function fetchListInvitations(): Promise<Response> {
+  return apiFetch('/api/user/listInvitations');
+}
