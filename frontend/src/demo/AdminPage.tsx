@@ -66,13 +66,7 @@ export function AdminPage({
       {tab === 'einladung' && (
         <InviteManager
           restaurants={restaurants}
-          invitations={invitations.map((inv) => {
-            const restaurant = restaurants.find((r) => r.id === inv.restaurantId);
-            const its = orders.filter((o) => o.invitationId === inv.id);
-            const prices = new Map(restaurant?.menu.map((m) => [m.id, m.priceCents]));
-            const totalCents = its.reduce((s, o) => s + o.lines.reduce((t, l) => t + (prices.get(l.menuItemId) ?? 0) * l.quantity, 0), 0);
-            return { ...inv, orderCount: its.length, totalCents };
-          })}
+          invitations={invitations}
           ordersHref={(inv) => adminHref('bestellungen', inv.id)}
           onOpenOrders={(inv) => navigate(adminHref('bestellungen', inv.id))}
           onCreate={onCreateInvitation}

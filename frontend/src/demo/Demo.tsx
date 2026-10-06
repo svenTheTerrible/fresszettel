@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
+import { createInvitation, listInvitations } from '../lib/invitations';
 import {
   createRestaurant,
   listMenuItems,
@@ -9,8 +10,8 @@ import {
   toRestaurant,
   updateRestaurant,
 } from '../lib/restaurants';
-import type { Invitation, NewMenuItem, Order, Restaurant } from '../types';
-import { mockInvitations, mockOrders } from './mockData';
+import type { Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
+import { mockOrders } from './mockData';
 import { useAuth } from './auth-context';
 import { AdminPage } from './AdminPage';
 import { OrderSheetPage } from './OrderSheetPage';
@@ -33,7 +34,7 @@ export function Demo() {
   const { token } = useAuth();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [invitations, setInvitations] = useState<Invitation[]>(mockInvitations);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [orders, setOrders] = useState<Order[]>(mockOrders);
 
   // Load the user's restaurants once a token is present.
@@ -48,6 +49,24 @@ export function Demo() {
         setSelectedId(
           (current) => current ?? (list.length > 0 ? String(list[0].id) : null),
         );
+      } catch {
+        // Backend unreachable — leave the list empty.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  // Load the user's invitations (order batches) once a token is present.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await listInvitations();
+        if (cancelled) return;
+        setInvitations(list);
       } catch {
         // Backend unreachable — leave the list empty.
       }
@@ -178,6 +197,12 @@ export function Demo() {
     await refreshMenu(id);
   };
 
+  const handleCreateInvitation = async (input: NewInvitation) => {
+    const created = await createInvitation(input);
+    setInvitations((is) => [created, ...is]);
+    return created;
+  };
+
   return (
     <Routes>
       <Route
@@ -208,23 +233,7 @@ export function Demo() {
               onAddItem={handleAddItem}
               onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
-              onCreateInvitation={async ({
-                restaurantId,
-                validFrom,
-                validUntil,
-              }) => {
-                const inv: Invitation = {
-                  id: uid(),
-                  url: `${location.origin}/z/${uid()}`,
-                  restaurantId,
-                  restaurantName:
-                    restaurants.find((r) => r.id === restaurantId)?.name ?? '',
-                  validFrom: validFrom.toISOString(),
-                  validUntil: validUntil.toISOString(),
-                };
-                setInvitations((is) => [inv, ...is]);
-                return inv;
-              }}
+               onCreateInvitation={handleCreateInvitation}
               onTogglePaid={(orderId, paid) =>
                 setOrders((os) =>
                   os.map((o) => (o.id === orderId ? { ...o, paid } : o)),

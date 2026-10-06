@@ -1,5 +1,7 @@
 package com.terrible_sven.fresszettel.service;
 
+import com.terrible_sven.fresszettel.controller.dto.CreateInvitationRequest;
+import com.terrible_sven.fresszettel.controller.dto.InvitationSummary;
 import com.terrible_sven.fresszettel.controller.dto.OrderItemInput;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
 import com.terrible_sven.fresszettel.controller.dto.PlaceOrderRequest;
@@ -12,11 +14,15 @@ import com.terrible_sven.fresszettel.domain.orderbatch.OrderBatchRepository;
 import com.terrible_sven.fresszettel.domain.restaurant.Restaurant;
 import com.terrible_sven.fresszettel.domain.restaurant.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,56 @@ public class OrderService {
 	private final OrderBatchRepository orderBatchRepository;
 	private final MenuItemRepository menuItemRepository;
 	private final RestaurantRepository restaurantRepository;
+
+	@Transactional
+	public InvitationSummary createInvitation(CreateInvitationRequest request, Long userId) {
+		restaurantRepository.findOwnedById(request.restaurantId(), userId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
+
+		OrderBatch batch = new OrderBatch();
+		batch.setUserId(userId);
+		batch.setRestaurantId(request.restaurantId());
+		batch.setTimestamp(request.validFrom());
+		batch.setDeadline(request.validUntil());
+		batch.setToken(UUID.randomUUID().toString());
+
+		orderBatchRepository.save(batch);
+		return toSummary(batch);
+	}
+
+	@Transactional(readOnly = true)
+	public List<InvitationSummary> listInvitations(Long userId) {
+		return orderBatchRepository.findByUserIdOrderByTimestampDesc(userId).stream()
+				.map(this::toSummary)
+				.toList();
+	}
+
+	private InvitationSummary toSummary(OrderBatch batch) {
+		String restaurantName = restaurantRepository.findById(batch.getRestaurantId())
+				.map(Restaurant::getName)
+				.orElse(null);
+
+		List<Order> orders = orderRepository.findByOrderBatchId(batch.getId());
+		long totalCents = orders.stream()
+				.mapToLong(order -> {
+					int quantity = order.getQuantity() == null ? 0 : order.getQuantity();
+					double price = order.getMenuItem() != null && order.getMenuItem().getPrice() != null
+							? order.getMenuItem().getPrice()
+							: 0;
+					return Math.round(price * 100) * quantity;
+				})
+				.sum();
+
+		return new InvitationSummary(
+				batch.getId(),
+				batch.getToken(),
+				batch.getRestaurantId(),
+				restaurantName,
+				batch.getTimestamp(),
+				batch.getDeadline(),
+				orders.size(),
+				totalCents);
+	}
 
 	public List<Order> placeOrder(PlaceOrderRequest request) {
 		OrderBatch batch = orderBatchRepository.findByToken(request.token())
