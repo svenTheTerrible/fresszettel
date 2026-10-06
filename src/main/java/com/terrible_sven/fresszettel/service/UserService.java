@@ -33,4 +33,21 @@ public class UserService {
 		String refreshToken = jwtService.createRefreshToken(user);
 		return new AuthResponse(accessToken, refreshToken);
 	}
+
+	/**
+	 * Exchange a valid refresh token for a fresh access token. Returns empty when
+	 * the token is missing, invalid, expired, or no longer maps to a user.
+	 */
+	public Optional<String> refreshAccessToken(String refreshToken) {
+		if (refreshToken == null || refreshToken.isBlank()) {
+			return Optional.empty();
+		}
+		try {
+			Long userId = jwtService.parseUserId(refreshToken);
+			return userRepository.findById(userId)
+					.map(user -> jwtService.createAccessToken(user.getId()));
+		} catch (Exception e) {
+			return Optional.empty();
+		}
+	}
 }

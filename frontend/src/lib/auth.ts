@@ -1,36 +1,20 @@
 /**
  * Thin auth layer for the demo app. Talks to the backend's
- * `POST /api/authentification/login` endpoint and keeps the JWT access token
- * in localStorage so the admin pages stay unlocked across a refresh.
+ * `POST /api/authentification/login` endpoint and keeps the JWT access + refresh
+ * tokens in localStorage so the admin pages stay unlocked across a refresh. The
+ * tokens live in the shared storage used by `apiFetch` (see lib/apiHelper.ts).
  */
 
 import { fetchCreateAccount, fetchLogin } from './api';
-
-const TOKEN_KEY = 'fresszettel.accessToken';
+import { clearStoredTokens, getStoredAccessToken, storeTokens } from './apiHelper';
 
 /** Read the stored access token, or null when not logged in. */
 export function getStoredToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function storeToken(token: string): void {
-  try {
-    localStorage.setItem(TOKEN_KEY, token);
-  } catch {
-    // Ignore storage errors (private mode, quota) — the session just won't persist.
-  }
+  return getStoredAccessToken();
 }
 
 export function clearToken(): void {
-  try {
-    localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // ignore
-  }
+  clearStoredTokens();
 }
 
 /**
@@ -71,6 +55,7 @@ export async function login(email: string, password: string): Promise<string> {
   if (!data.accessToken) {
     throw new Error('E-Mail oder Passwort stimmt nicht.');
   }
+  storeTokens(data.accessToken, data.refreshToken);
   return data.accessToken;
 }
 

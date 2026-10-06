@@ -1,6 +1,7 @@
 package com.terrible_sven.fresszettel.service;
 
 import com.terrible_sven.fresszettel.domain.user.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,12 +38,32 @@ public class JwtService {
 		return buildToken(user, refreshTokenTtlMillis);
 	}
 
+	public String createAccessToken(Long userId) {
+		return buildToken(userId, accessTokenTtlMillis);
+	}
+
+	/**
+	 * Parse and verify a token, returning the userId it was minted for. Throws
+	 * when the token is malformed, has a bad signature, or has expired.
+	 */
+	public Long parseUserId(String token) {
+		Claims claims = Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
+		return Long.valueOf(claims.getSubject());
+	}
+
 	private String buildToken(User user, long ttlMillis) {
+		return buildToken(user.getId(), ttlMillis);
+	}
+
+	private String buildToken(Long userId, long ttlMillis) {
 		Date now = new Date();
 		Date expiry = new Date(now.getTime() + ttlMillis);
 		return Jwts.builder()
-				.subject(String.valueOf(user.getId()))
-				.claim("userId", user.getId())
+				.subject(String.valueOf(userId))
 				.issuedAt(now)
 				.expiration(expiry)
 				.signWith(key)

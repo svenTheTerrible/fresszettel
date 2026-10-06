@@ -42,7 +42,7 @@ export function Demo() {
     let cancelled = false;
     void (async () => {
       try {
-        const list = await listRestaurants(token);
+        const list = await listRestaurants();
         if (cancelled) return;
         setRestaurants(list.map(toRestaurant));
         setSelectedId(
@@ -63,7 +63,7 @@ export function Demo() {
     let cancelled = false;
     void (async () => {
       try {
-        const items = await listMenuItems(token, selectedId);
+        const items = await listMenuItems(selectedId);
         if (cancelled) return;
         setRestaurants((rs) =>
           rs.map((r) =>
@@ -82,7 +82,7 @@ export function Demo() {
   /** Re-fetch one restaurant's menu so item ids stay canonical. */
   const refreshMenu = async (restaurantId: string) => {
     if (!token) return;
-    const items = await listMenuItems(token, restaurantId);
+    const items = await listMenuItems(restaurantId);
     setRestaurants((rs) =>
       rs.map((r) =>
         r.id === restaurantId ? { ...r, menu: items.map(toMenuItem) } : r,
@@ -92,8 +92,8 @@ export function Demo() {
 
   const handleCreateRestaurant = async () => {
     if (!token) return;
-    await createRestaurant(token, { name: '', menuItems: [] });
-    const list = await listRestaurants(token);
+    await createRestaurant({ name: '', menuItems: [] });
+    const list = await listRestaurants();
     setRestaurants(list.map(toRestaurant));
     const newest = list.reduce((best, s) => (s.id > best.id ? s : best));
     setSelectedId(String(newest.id));
@@ -106,7 +106,7 @@ export function Demo() {
     if (!token) return;
     const r = restaurants.find((x) => x.id === id);
     if (!r) return;
-    await updateRestaurant(token, {
+    await updateRestaurant({
       restaurantId: Number(id),
       name: patch.name ?? r.name,
       phone: patch.phone ?? r.phone,
@@ -121,7 +121,7 @@ export function Demo() {
     if (!token) return;
     const r = restaurants.find((x) => x.id === id);
     if (!r) return;
-    await updateRestaurant(token, {
+    await updateRestaurant({
       restaurantId: Number(id),
       name: r.name,
       phone: r.phone,
@@ -146,7 +146,7 @@ export function Demo() {
     if (!token) return;
     const r = restaurants.find((x) => x.id === id);
     if (!r) return;
-    await updateRestaurant(token, {
+    await updateRestaurant({
       restaurantId: Number(id),
       name: r.name,
       phone: r.phone,
@@ -169,7 +169,7 @@ export function Demo() {
     if (!token) return;
     const r = restaurants.find((x) => x.id === id);
     if (!r) return;
-    await updateRestaurant(token, {
+    await updateRestaurant({
       restaurantId: Number(id),
       name: r.name,
       phone: r.phone,
