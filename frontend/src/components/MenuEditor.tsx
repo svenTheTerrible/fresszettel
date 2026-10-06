@@ -43,6 +43,9 @@ export function MenuEditor({
   /** The menu item currently being edited inline, if any. */
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  /** The menu item awaiting a delete confirmation, if any. */
+  const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
+
   const [error, setError] = useState('');
   const run = async (fn: () => Promise<void> | void, fallback: string) => {
     setError('');
@@ -53,6 +56,12 @@ export function MenuEditor({
       setError(errorText(e, fallback));
       return false;
     }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || !current) return;
+    const ok = await run(() => onDeleteItem(current.id, deleteTarget.id), 'Streichen hat nicht geklappt.');
+    if (ok) setDeleteTarget(null);
   };
 
   const saveField = (field: 'name' | 'phone', value: string) => {
@@ -179,8 +188,8 @@ export function MenuEditor({
                     <button
                       type="button"
                       className="fz-icon-btn"
-                      aria-label={`${item.name} streichen`}
-                      onClick={() => void run(() => onDeleteItem(current.id, item.id), 'Streichen hat nicht geklappt.')}
+                       aria-label={`${item.name} streichen`}
+                       onClick={() => setDeleteTarget(item)}
                     >
                       <CrossIcon />
                     </button>
@@ -202,6 +211,37 @@ export function MenuEditor({
           {error}
         </span>
       </div>
+
+      {deleteTarget && (
+        <div
+          className="fz-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fz-del-title"
+          aria-describedby="fz-del-desc"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setDeleteTarget(null);
+          }}
+        >
+          <div className="fz-modal__backdrop" onClick={() => setDeleteTarget(null)} />
+          <div className="fz-modal__card">
+            <h2 className="fz-h2" id="fz-del-title">
+              Gericht streichen?
+            </h2>
+            <p className="fz-text" id="fz-del-desc">
+              „{deleteTarget.name}“ von der Karte entfernen?
+            </p>
+            <div className="fz-modal__actions">
+              <button type="button" className="fz-btn" onClick={() => setDeleteTarget(null)}>
+                Abbrechen
+              </button>
+              <button type="button" className="fz-btn" autoFocus onClick={() => void confirmDelete()}>
+                Streichen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -720,6 +720,50 @@
 }
 
 /* ------------------------------------------------------------------ */
+/* Confirm dialog                                                      */
+/* ------------------------------------------------------------------ */
+.fz-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.fz-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(60, 50, 30, 0.38);
+}
+.fz-modal__card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 26px 28px 24px;
+  background: var(--fz-paper);
+  border: 1.5px solid var(--fz-ink);
+  border-radius: 8px;
+  box-shadow: var(--fz-shadow);
+  text-align: center;
+  transform: rotate(-0.5deg);
+}
+.fz-modal__card .fz-h2 {
+  margin: 0 0 6px;
+  font-size: 34px;
+  line-height: 40px;
+}
+.fz-modal__card .fz-text {
+  margin: 0 0 16px;
+}
+.fz-modal__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------------ */
 /* Small fixes                                                         */
 /* ------------------------------------------------------------------ */
 .fz-pick__name {
