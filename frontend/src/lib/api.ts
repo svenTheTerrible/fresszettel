@@ -1,18 +1,22 @@
 /**
- * Central place for all API endpoint fetch calls. Each function performs the
- * raw `fetch` against a backend endpoint under the `/api` context path and
- * returns the `Response` so callers can interpret the status and body.
+ * Central place for all API endpoint calls. Each function performs the raw
+ * fetch against a backend endpoint under the `/api` context path and returns the
+ * `Response` so callers can interpret the status and body. Token injection and
+ * the refresh logic live in `apiHelper.ts`.
  */
+
+import { apiFetch } from './apiHelper';
 
 /** `POST /api/authentification/login` — authenticate with email + password. */
 export async function fetchLogin(
   email: string,
   password: string,
 ): Promise<Response> {
-  return fetch('/api/authentification/login', {
+  return apiFetch('/api/authentification/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
+    auth: false,
   });
 }
 
@@ -21,16 +25,13 @@ export async function fetchCreateAccount(
   email: string,
   password: string,
 ): Promise<Response> {
-  return fetch('/api/authentification/create', {
+  return apiFetch('/api/authentification/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
+    auth: false,
   });
 }
-
-const authHeaders = (token: string): Record<string, string> => ({
-  Authorization: `Bearer ${token}`,
-});
 
 /** A menu item as accepted by `createRestaurant` / `updateRestaurant`. */
 export interface MenuItemInput {
@@ -62,40 +63,33 @@ export interface UpdateRestaurantRequest {
 }
 
 /** `GET /api/user/listRestaurants` — the logged-in user's restaurants. */
-export async function fetchListRestaurants(token: string): Promise<Response> {
-  return fetch('/api/user/listRestaurants', { headers: authHeaders(token) });
+export async function fetchListRestaurants(): Promise<Response> {
+  return apiFetch('/api/user/listRestaurants');
 }
 
 /** `GET /api/user/menuItems/{restaurantId}` — one restaurant's menu. */
-export async function fetchMenuItems(
-  token: string,
-  restaurantId: number | string,
-): Promise<Response> {
-  return fetch(`/api/user/menuItems/${restaurantId}`, {
-    headers: authHeaders(token),
-  });
+export async function fetchMenuItems(restaurantId: number | string): Promise<Response> {
+  return apiFetch(`/api/user/menuItems/${restaurantId}`);
 }
 
 /** `POST /api/user/createRestaurant`. */
 export async function fetchCreateRestaurant(
-  token: string,
   request: CreateRestaurantRequest,
 ): Promise<Response> {
-  return fetch('/api/user/createRestaurant', {
+  return apiFetch('/api/user/createRestaurant', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
 }
 
 /** `PUT /api/user/updateRestaurant`. */
 export async function fetchUpdateRestaurant(
-  token: string,
   request: UpdateRestaurantRequest,
 ): Promise<Response> {
-  return fetch('/api/user/updateRestaurant', {
+  return apiFetch('/api/user/updateRestaurant', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
 }

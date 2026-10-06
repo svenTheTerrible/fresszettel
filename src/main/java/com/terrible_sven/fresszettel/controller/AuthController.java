@@ -3,6 +3,8 @@ package com.terrible_sven.fresszettel.controller;
 import com.terrible_sven.fresszettel.controller.dto.AuthResponse;
 import com.terrible_sven.fresszettel.controller.dto.CreateUserRequest;
 import com.terrible_sven.fresszettel.controller.dto.LoginRequest;
+import com.terrible_sven.fresszettel.controller.dto.RefreshRequest;
+import com.terrible_sven.fresszettel.controller.dto.RefreshResponse;
 import com.terrible_sven.fresszettel.domain.user.User;
 import com.terrible_sven.fresszettel.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +31,11 @@ public class AuthController {
 	@PostMapping("create")
 	public User createUser(@RequestBody CreateUserRequest request) {
 		return userService.createUser(request.email(), request.password());
+	}
+
+	@PostMapping("refresh")
+	public Optional<RefreshResponse> refreshToken(@RequestBody RefreshRequest request) {
+		return userService.refreshAccessToken(request.refreshToken())
+				.map(RefreshResponse::new);
 	}
 }

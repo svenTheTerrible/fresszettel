@@ -49,12 +49,10 @@ function assertOk(response: Response): void {
 }
 
 /** List the logged-in user's restaurants. */
-export async function listRestaurants(
-  token: string,
-): Promise<RestaurantSummary[]> {
+export async function listRestaurants(): Promise<RestaurantSummary[]> {
   let response: Response;
   try {
-    response = await fetchListRestaurants(token);
+    response = await fetchListRestaurants();
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }
@@ -64,12 +62,11 @@ export async function listRestaurants(
 
 /** List one restaurant's menu items. */
 export async function listMenuItems(
-  token: string,
   restaurantId: number | string,
 ): Promise<MenuItemView[]> {
   let response: Response;
   try {
-    response = await fetchMenuItems(token, restaurantId);
+    response = await fetchMenuItems(restaurantId);
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }
@@ -79,12 +76,11 @@ export async function listMenuItems(
 
 /** Create a restaurant (empty menu when `menuItems` is empty). */
 export async function createRestaurant(
-  token: string,
   request: CreateRestaurantRequest,
 ): Promise<void> {
   let response: Response;
   try {
-    response = await fetchCreateRestaurant(token, request);
+    response = await fetchCreateRestaurant(request);
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }
@@ -93,12 +89,11 @@ export async function createRestaurant(
 
 /** Update a restaurant. Sends the full menu; items without an id are new. */
 export async function updateRestaurant(
-  token: string,
   request: UpdateRestaurantRequest,
 ): Promise<void> {
   let response: Response;
   try {
-    response = await fetchUpdateRestaurant(token, request);
+    response = await fetchUpdateRestaurant(request);
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }

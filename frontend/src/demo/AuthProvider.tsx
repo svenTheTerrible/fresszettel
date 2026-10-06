@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { clearToken, getStoredToken, login as loginRequest, register as registerRequest, storeToken } from '../lib/auth';
+import { clearToken, getStoredToken, login as loginRequest, register as registerRequest } from '../lib/auth';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
 /** Wraps the app and owns the login state. Restores a session from localStorage. */
@@ -8,7 +8,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const t = await loginRequest(email, password);
-    storeToken(t);
     setToken(t);
   }, []);
 
