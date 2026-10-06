@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { OrderSheet } from '../components/OrderSheet';
 import { getOrderMenu, placeOrder } from '../lib/orders';
 import type { OrderMenu } from '../lib/orders';
+import { loadName, loadOrder, pruneExpiredOrders, saveName, saveOrder } from '../lib/orderSheetStorage';
 import type { Restaurant } from '../types';
 
 type State =
@@ -16,7 +17,12 @@ export function OrderSheetPage() {
   const { token = '' } = useParams();
   const [state, setState] = useState<State>({ status: 'loading' });
 
+  // The name + dish selection the visitor last entered, read once on mount so
+  // reopening the link restores it.
+  const [saved] = useState(() => ({ name: loadName(), order: token ? loadOrder(token) : null }));
+
   useEffect(() => {
+    pruneExpiredOrders();
     let cancelled = false;
     void (async () => {
       try {
@@ -40,6 +46,15 @@ export function OrderSheetPage() {
     };
   }, [token]);
 
+  const handlePersist = useCallback(
+    (name: string, quantities: Record<string, number>) => {
+      if (!token) return;
+      saveName(name);
+      saveOrder(token, quantities);
+    },
+    [token],
+  );
+
   if (state.status === 'loading') {
     return <p style={{ padding: 24 }}>Wird geladen …</p>;
   }
@@ -51,8 +66,12 @@ export function OrderSheetPage() {
   }
   return (
     <OrderSheet
+      key={token}
       restaurant={state.restaurant}
       validUntil={state.deadline}
+      initialName={saved.name}
+      initialQuantities={saved.order?.quantities ?? {}}
+      onPersist={handlePersist}
       onSubmit={(draft) => placeOrder(token, draft)}
     />
   );
