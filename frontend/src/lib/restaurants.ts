@@ -20,6 +20,7 @@ import {
 export interface RestaurantSummary {
   id: number;
   name: string;
+  phone?: string;
   itemCount: number;
   /** ISO local date-time. */
   timestamp: string;
@@ -99,7 +100,12 @@ export async function updateRestaurant(
 
 /** Map a backend summary onto the shared restaurant shape (menu loaded separately). */
 export function toRestaurant(summary: RestaurantSummary): Restaurant {
-  return { id: String(summary.id), name: summary.name, menu: [] };
+  return {
+    id: String(summary.id),
+    name: summary.name,
+    phone: summary.phone,
+    menu: [],
+  };
 }
 
 /** Map a backend menu item view onto the shared shape (price in cents). */

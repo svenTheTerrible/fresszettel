@@ -13,7 +13,7 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 	@Query("SELECT r FROM Restaurant r WHERE r.id = :id AND r.user.id = :userId")
 	Optional<Restaurant> findOwnedById(@Param("id") Long id, @Param("userId") Long userId);
 
-	@Query("SELECT new com.terrible_sven.fresszettel.controller.dto.RestaurantSummary(r.id, r.name, size(r.menuItems), r.timestamp) " +
+	@Query("SELECT new com.terrible_sven.fresszettel.controller.dto.RestaurantSummary(r.id, r.name, r.phone, size(r.menuItems), r.timestamp) " +
 			"FROM Restaurant r WHERE r.user.id = :userId")
 	List<RestaurantSummary> findOwnedByUserWithCounts(@Param("userId") Long userId);
 }
