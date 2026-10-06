@@ -38,6 +38,7 @@ export interface MenuItemInput {
   id?: number;
   orderNumber: string;
   name: string;
+  description?: string;
   /** Price in euro, e.g. 8.5. */
   price: number;
 }
