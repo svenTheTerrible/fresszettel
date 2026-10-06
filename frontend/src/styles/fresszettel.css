@@ -629,6 +629,10 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.fz-admin__logout {
+  margin-left: auto;
+  font-size: 14px;
+}
 .fz-tabs {
   display: flex;
   align-items: flex-end;

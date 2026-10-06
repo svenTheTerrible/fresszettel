@@ -1,5 +1,6 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { AdminLayout, InviteManager, MenuEditor, OrdersOverview } from '../index';
+import { useAuth } from './auth-context';
 import type { AdminTab, Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
 
 const TABS: AdminTab[] = ['speisekarte', 'einladung', 'bestellungen'];
@@ -37,11 +38,16 @@ export function AdminPage({
   const { tab: tabParam } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { logout } = useAuth();
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
   const tab: AdminTab = TABS.includes(tabParam as AdminTab) ? (tabParam as AdminTab) : 'speisekarte';
   const current = invitations.find((i) => i.id === searchParams.get('zettel')) ?? invitations[0];
 
   return (
-    <AdminLayout active={tab} hrefFor={adminHref} onNavigate={(t) => navigate(adminHref(t))}>
+    <AdminLayout active={tab} hrefFor={adminHref} onNavigate={(t) => navigate(adminHref(t))} onLogout={handleLogout}>
       {tab === 'speisekarte' && (
         <MenuEditor
           restaurants={restaurants}
