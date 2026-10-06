@@ -16,6 +16,7 @@ export interface AdminPageProps {
   onCreateRestaurant: () => void;
   onUpdateRestaurant: (id: string, patch: { name?: string; phone?: string }) => void;
   onAddItem: (id: string, item: NewMenuItem) => void;
+  onUpdateItem: (id: string, itemId: string, item: NewMenuItem) => void;
   onDeleteItem: (id: string, itemId: string) => void;
   onCreateInvitation: (input: NewInvitation) => Promise<Invitation>;
   onTogglePaid: (orderId: string, paid: boolean) => void;
@@ -31,6 +32,7 @@ export function AdminPage({
   onCreateRestaurant,
   onUpdateRestaurant,
   onAddItem,
+  onUpdateItem,
   onDeleteItem,
   onCreateInvitation,
   onTogglePaid,
@@ -56,6 +58,7 @@ export function AdminPage({
           onCreateRestaurant={onCreateRestaurant}
           onUpdateRestaurant={onUpdateRestaurant}
           onAddItem={onAddItem}
+          onUpdateItem={onUpdateItem}
           onDeleteItem={onDeleteItem}
         />
       )}
