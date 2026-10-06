@@ -26,7 +26,7 @@ const inMinutes = (min: number) => new Date(Date.now() + min * 60_000).toISOStri
 export const mockInvitations: Invitation[] = [
   {
     id: 'i1',
-    url: `${location.origin}${location.pathname}#/z/7Kq2xM`,
+    url: `${location.origin}/z/7Kq2xM`,
     restaurantId: 'r1',
     restaurantName: 'Pizzeria Da Mario',
     validFrom: inMinutes(-30),
