@@ -65,8 +65,9 @@ public class RestaurantService {
 				menuItem.setOrderNumber(input.orderNumber());
 				menuItem.setName(input.name());
 				menuItem.setPrice(input.price());
-
+				
 				menuItemRepository.save(menuItem);
+				keptMenuItemIds.add(menuItem.getId());
 			} else {
 				keptMenuItemIds.add(input.id());
 				MenuItem menuItem = menuItemRepository.findById(input.id())
