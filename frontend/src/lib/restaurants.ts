@@ -16,23 +16,30 @@ import {
   type UpdateRestaurantRequest,
 } from './api';
 
-/** One element of `GET /api/user/listRestaurants`. */
+/**
+ * One element of `GET /api/user/listRestaurants`, exactly as serialized by the
+ * backend. Every reference field may be `null` (a `null` DB column serializes to
+ * JSON `null`); only `itemCount` is a primitive and therefore never `null`.
+ */
 export interface RestaurantSummary {
   id: number;
-  name: string;
-  phone?: string;
+  name: string | null;
+  phone: string | null;
   itemCount: number;
   /** ISO local date-time. */
-  timestamp: string;
+  timestamp: string | null;
 }
 
-/** One element of `GET /api/user/menuItems/{restaurantId}`. Price in euro. */
+/**
+ * One element of `GET /api/user/menuItems/{restaurantId}`, exactly as serialized
+ * by the backend. Reference fields may be `null`; price is in euro.
+ */
 export interface MenuItemView {
   id: number;
-  orderNumber: string;
-  name: string;
-  description?: string;
-  price: number;
+  orderNumber: string | null;
+  name: string | null;
+  description: string | null;
+  price: number | null;
 }
 
 function assertOk(response: Response): void {
@@ -98,24 +105,30 @@ export async function updateRestaurant(
   assertOk(response);
 }
 
-/** Map a backend summary onto the shared restaurant shape (menu loaded separately). */
+/**
+ * Map a backend summary onto the shared restaurant shape (menu loaded separately).
+ * Backend `null`s are normalized away: optional fields become `undefined`.
+ */
 export function toRestaurant(summary: RestaurantSummary): Restaurant {
   return {
     id: String(summary.id),
-    name: summary.name,
-    phone: summary.phone,
+    name: summary.name ?? '',
+    phone: summary.phone ?? undefined,
     menu: [],
   };
 }
 
-/** Map a backend menu item view onto the shared shape (price in cents). */
+/**
+ * Map a backend menu item view onto the shared shape (price in cents).
+ * Backend `null`s are normalized away: optional fields become `undefined`.
+ */
 export function toMenuItem(view: MenuItemView): MenuItem {
   return {
     id: String(view.id),
-    number: view.orderNumber,
-    name: view.name,
-    description: view.description,
-    priceCents: Math.round(view.price * 100),
+    number: view.orderNumber ?? '',
+    name: view.name ?? '',
+    description: view.description ?? undefined,
+    priceCents: Math.round((view.price ?? 0) * 100),
   };
 }
 
