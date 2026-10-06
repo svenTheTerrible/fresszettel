@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { OrderSheet } from '../index';
+import { OrderSheet } from '../components/OrderSheet';
 import type { Invitation, OrderDraft, Restaurant } from '../types';
 
 export interface OrderSheetPageProps {

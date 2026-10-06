@@ -1,5 +1,8 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { AdminLayout, InviteManager, MenuEditor, OrdersOverview } from '../index';
+import { AdminLayout } from '../components/AdminLayout';
+import { InviteManager } from '../components/InviteManager';
+import { MenuEditor } from '../components/MenuEditor';
+import { OrdersOverview } from '../components/OrdersOverview';
 import { useAuth } from './auth-context';
 import type { AdminTab, Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
 
