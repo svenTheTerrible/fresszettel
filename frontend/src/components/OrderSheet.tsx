@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { OrderDraft, Restaurant } from '../types';
 import { formatEuro, formatTime } from '../lib/format';
 import { useCountdown } from '../hooks/useCountdown';
@@ -13,6 +13,8 @@ export interface OrderSheetProps {
   initiallySubmitted?: boolean;
   /** Called on "Zettel abgeben" (and again after "Nochmal ändern"). Throw to show an error. */
   onSubmit: (draft: OrderDraft) => Promise<void> | void;
+  /** Called whenever the name or the selected dishes change (for remembering). */
+  onPersist?: (name: string, quantities: Record<string, number>) => void;
   maxQuantity?: number;
 }
 
@@ -24,6 +26,7 @@ export function OrderSheet({
   initialQuantities = {},
   initiallySubmitted = false,
   onSubmit,
+  onPersist,
   maxQuantity = 20,
 }: OrderSheetProps) {
   const [name, setName] = useState(initialName);
@@ -33,6 +36,11 @@ export function OrderSheet({
   const [error, setError] = useState<string | null>(null);
   const countdown = useCountdown(validUntil);
   const deadline = formatTime(validUntil);
+
+  // Remember what the visitor typed so reopening the link restores it.
+  useEffect(() => {
+    onPersist?.(name, qty);
+  }, [name, qty, onPersist]);
 
   const setQuantity = (id: string, q: number) =>
     setQty((prev) => ({ ...prev, [id]: Math.max(0, Math.min(maxQuantity, q)) }));
