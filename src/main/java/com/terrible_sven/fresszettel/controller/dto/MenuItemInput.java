@@ -1,4 +1,4 @@
 package com.terrible_sven.fresszettel.controller.dto;
 
-public record MenuItemInput(String orderNumber, String name, Double price, Long id) {
+public record MenuItemInput(String orderNumber, String name, String description, Double price, Long id) {
 }
