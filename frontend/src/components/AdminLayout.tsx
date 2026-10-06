@@ -1,10 +1,10 @@
 import type { MouseEvent, ReactNode } from 'react';
 import type { AdminTab } from '../types';
 
-const TABS: { id: AdminTab; label: string }[] = [
+const TABS: { id: AdminTab; label: string; hiddenByDefault?: boolean }[] = [
   { id: 'speisekarte', label: 'Speisekarte' },
   { id: 'einladung', label: 'Einladung' },
-  { id: 'bestellungen', label: 'Bestellungen' },
+  { id: 'bestellungen', label: 'Bestellungen', hiddenByDefault: true },
 ];
 
 export interface AdminLayoutProps {
@@ -39,7 +39,7 @@ export function AdminLayout({ active, children, hrefFor = (t) => `#/admin/${t}`,
           )}
         </header>
         <nav className="fz-tabs" aria-label="Admin-Bereiche">
-          {TABS.map((tab) => (
+          {TABS.filter((tab) => !tab.hiddenByDefault || tab.id === active).map((tab) => (
             <a
               key={tab.id}
               href={hrefFor(tab.id)}
