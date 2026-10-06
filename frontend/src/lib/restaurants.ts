@@ -30,6 +30,7 @@ export interface MenuItemView {
   id: number;
   orderNumber: string;
   name: string;
+  description?: string;
   price: number;
 }
 
@@ -107,6 +108,7 @@ export function toMenuItem(view: MenuItemView): MenuItem {
     id: String(view.id),
     number: view.orderNumber,
     name: view.name,
+    description: view.description,
     priceCents: Math.round(view.price * 100),
   };
 }
@@ -117,6 +119,7 @@ export function toMenuItemInput(item: MenuItem): MenuItemInput {
     id: Number(item.id),
     orderNumber: item.number,
     name: item.name,
+    description: item.description,
     price: item.priceCents / 100,
   };
 }

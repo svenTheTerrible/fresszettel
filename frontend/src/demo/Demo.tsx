@@ -130,6 +130,7 @@ export function Demo() {
         {
           orderNumber: item.number,
           name: item.name,
+          description: item.description,
           price: item.priceCents / 100,
         },
       ],
