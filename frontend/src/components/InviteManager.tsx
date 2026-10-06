@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
 import type { Invitation, NewInvitation, Restaurant } from '../types';
-import { combineDateAndTime, formatEuro, formatShortDate, formatWindow, toDateInputValue } from '../lib/format';
-import { CopyIcon } from './Icons';
+import { formatEuro, formatShortDate, formatWindow } from '../lib/format';
+import { NewInvitationForm } from './NewInvitationForm';
 
 export interface InviteManagerProps {
   restaurants: Pick<Restaurant, 'id' | 'name'>[];
@@ -12,7 +11,6 @@ export interface InviteManagerProps {
   /** "läuft · ansehen" link target for running invitations. */
   ordersHref?: (invitation: Invitation) => string;
   onOpenOrders?: (invitation: Invitation) => void;
-  defaultFrom?: string;
   defaultUntil?: string;
 }
 
@@ -30,56 +28,8 @@ export function InviteManager({
   onCreate,
   ordersHref = (inv) => `#/admin/bestellungen?zettel=${encodeURIComponent(inv.id)}`,
   onOpenOrders,
-  defaultFrom = '11:30',
-  defaultUntil = '12:15',
+  defaultUntil,
 }: InviteManagerProps) {
-  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? '');
-  const [date, setDate] = useState(() => toDateInputValue(new Date()));
-  const [from, setFrom] = useState(defaultFrom);
-  const [until, setUntil] = useState(defaultUntil);
-  const [created, setCreated] = useState<Invitation | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (!restaurants.some((r) => r.id === restaurantId)) setRestaurantId(restaurants[0]?.id ?? '');
-  }, [restaurants, restaurantId]);
-  useEffect(() => () => window.clearTimeout(copyTimer.current), []);
-
-  const handleCreate = async () => {
-    const validFrom = combineDateAndTime(date, from);
-    const validUntil = combineDateAndTime(date, until);
-    if (!restaurantId) return setError('Erst ein Restaurant anlegen.');
-    if (!validFrom || !validUntil) return setError('Datum und Uhrzeiten bitte ausfüllen.');
-    if (validUntil <= validFrom) return setError('„bis“ muss nach „von“ liegen.');
-    if (validUntil.getTime() <= Date.now()) return setError('Das Zeitfenster liegt schon in der Vergangenheit.');
-
-    setBusy(true);
-    setError('');
-    try {
-      setCreated(await onCreate({ restaurantId, validFrom, validUntil }));
-      setCopied(false);
-    } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : 'Link erzeugen hat nicht geklappt.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleCopy = async () => {
-    if (!created) return;
-    try {
-      await navigator.clipboard.writeText(created.url);
-      setCopied(true);
-      window.clearTimeout(copyTimer.current);
-      copyTimer.current = window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setError('Kopieren ging nicht – bitte den Link markieren und selbst kopieren.');
-    }
-  };
-
   const now = Date.now();
 
   return (
@@ -88,60 +38,7 @@ export function InviteManager({
         <h1 className="fz-h1">Neuen Zettel rumgehen lassen</h1>
       </div>
 
-      <div className="fz-row fz-row--grow fz-row--wrap">
-        <label className="fz-field">
-          Restaurant
-          <select className="fz-input fz-input--hand" value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)}>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="fz-row fz-row--grow fz-row--wrap">
-        <label className="fz-field">
-          Datum
-          <input type="date" className="fz-input" value={date} onChange={(e) => setDate(e.target.value)} />
-        </label>
-        <label className="fz-field">
-          bestellbar von
-          <input type="time" className="fz-input" value={from} onChange={(e) => setFrom(e.target.value)} />
-        </label>
-        <label className="fz-field">
-          bis
-          <input type="time" className="fz-input" value={until} onChange={(e) => setUntil(e.target.value)} />
-        </label>
-      </div>
-
-      <div className="fz-row fz-row--double fz-row--center" style={{ gap: 16, flexWrap: 'wrap' }}>
-        <button type="button" className="fz-btn fz-btn--stamp" style={{ fontSize: 30, height: 52 }} disabled={busy} onClick={handleCreate}>
-          {busy ? 'Moment …' : 'Link erzeugen'}
-        </button>
-        <span role="status" className="fz-error">
-          {error}
-        </span>
-      </div>
-
-      {created && (
-        <div className="fz-block" style={{ height: 192, display: 'flex', alignItems: 'center' }}>
-          <div className="fz-slip">
-            <div className="fz-slip__meta">
-              Link für alle · {created.restaurantName} · {formatShortDate(created.validFrom)}{' '}
-              {formatWindow(created.validFrom, created.validUntil)} Uhr
-            </div>
-            <div className="fz-slip__body">
-              <code className="fz-slip__link">{created.url}</code>
-              <button type="button" className="fz-btn" onClick={handleCopy}>
-                <CopyIcon />
-                <span aria-live="polite">{copied ? 'Kopiert!' : 'Kopieren'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NewInvitationForm restaurants={restaurants} onCreate={onCreate} defaultUntil={defaultUntil} />
 
       <div className="fz-row fz-row--double">
         <h2 className="fz-h2">Frühere Zettel</h2>
