@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import type { NewMenuItem, Restaurant } from '../types';
-import { compareOrderNumbers, formatEuro, parseEuro } from '../lib/format';
-import { CrossIcon } from './Icons';
+import { useEffect, useState } from 'react';
+import type { MenuItem, NewMenuItem, Restaurant } from '../types';
+import { compareOrderNumbers, formatEuro } from '../lib/format';
+import { CrossIcon, PencilIcon } from './Icons';
+import { MenuItemForm } from './MenuItemForm';
 
 export interface MenuEditorProps {
   restaurants: Restaurant[];
@@ -12,6 +13,7 @@ export interface MenuEditorProps {
   /** Saved when a name/phone field loses focus. */
   onUpdateRestaurant: (restaurantId: string, patch: { name?: string; phone?: string }) => Promise<void> | void;
   onAddItem: (restaurantId: string, item: NewMenuItem) => Promise<void> | void;
+  onUpdateItem: (restaurantId: string, menuItemId: string, item: NewMenuItem) => Promise<void> | void;
   onDeleteItem: (restaurantId: string, menuItemId: string) => Promise<void> | void;
 }
 
@@ -25,6 +27,7 @@ export function MenuEditor({
   onCreateRestaurant,
   onUpdateRestaurant,
   onAddItem,
+  onUpdateItem,
   onDeleteItem,
 }: MenuEditorProps) {
   const current = restaurants.find((r) => r.id === selectedId) ?? restaurants[0] ?? null;
@@ -37,13 +40,10 @@ export function MenuEditor({
     setPhoneDraft(current?.phone ?? '');
   }, [current?.id, current?.name, current?.phone]);
 
-  const [no, setNo] = useState('');
-  const [dish, setDish] = useState('');
-  const [desc, setDesc] = useState('');
-  const [price, setPrice] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+  /** The menu item currently being edited inline, if any. */
+  const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [error, setError] = useState('');
   const run = async (fn: () => Promise<void> | void, fallback: string) => {
     setError('');
     try {
@@ -64,30 +64,6 @@ export function MenuEditor({
       return;
     }
     void run(() => onUpdateRestaurant(current.id, { [field]: trimmed }), 'Speichern hat nicht geklappt.');
-  };
-
-  const handleAdd = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!current || busy) return;
-    const number = no.trim();
-    const name = dish.trim();
-    const priceCents = parseEuro(price);
-    if (!number || !name) return setError('Nummer und Gericht brauchen wir mindestens.');
-    if (priceCents === null) return setError('Der Preis sieht komisch aus, z. B. 8,50');
-    if (current.menu.some((m) => m.number === number)) return setError(`Nr. ${number} steht schon auf der Karte.`);
-
-    setBusy(true);
-    const ok = await run(
-      () => onAddItem(current.id, { number, name, description: desc.trim() || undefined, priceCents }),
-      'Eintragen hat nicht geklappt.',
-    );
-    setBusy(false);
-    if (ok) {
-      setNo('');
-      setDish('');
-      setDesc('');
-      setPrice('');
-    }
   };
 
   const menu = current ? [...current.menu].sort((a, b) => compareOrderNumbers(a.number, b.number)) : [];
@@ -172,61 +148,52 @@ export function MenuEditor({
           </div>
 
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label={`Speisekarte ${current.name}`}>
-            {menu.map((item) => (
-              <li key={item.id} className="fz-grid fz-grid--menu">
-                <span className="fz-no">{item.number}</span>
-                <span className="fz-text fz-ellipsis">{item.name}</span>
-                <span className="fz-pick__desc fz-hide-sm">{item.description}</span>
-                <span className="fz-text fz-right fz-nowrap">{formatEuro(item.priceCents)}</span>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', height: 44 }}>
-                  <button
-                    type="button"
-                    className="fz-icon-btn"
-                    aria-label={`${item.name} streichen`}
-                    onClick={() => void run(() => onDeleteItem(current.id, item.id), 'Streichen hat nicht geklappt.')}
-                  >
-                    <CrossIcon />
-                  </button>
-                </div>
-              </li>
-            ))}
+            {menu.map((item) =>
+              editingId === item.id ? (
+                <li key={item.id}>
+                  <MenuItemForm
+                    menu={menu}
+                    editingId={item.id}
+                    initial={toFormInitial(item)}
+                    onSubmit={async (next) => {
+                      await onUpdateItem(current.id, item.id, next);
+                      setEditingId(null);
+                    }}
+                  />
+                </li>
+              ) : (
+                <li key={item.id} className="fz-grid fz-grid--menu">
+                  <span className="fz-no">{item.number}</span>
+                  <span className="fz-text fz-ellipsis">{item.name}</span>
+                  <span className="fz-pick__desc fz-hide-sm">{item.description}</span>
+                  <span className="fz-text fz-right fz-nowrap">{formatEuro(item.priceCents)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, height: 44 }}>
+                    <button
+                      type="button"
+                      className="fz-icon-btn"
+                      aria-label={`${item.name} ändern`}
+                      onClick={() => setEditingId(item.id)}
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className="fz-icon-btn"
+                      aria-label={`${item.name} streichen`}
+                      onClick={() => void run(() => onDeleteItem(current.id, item.id), 'Streichen hat nicht geklappt.')}
+                    >
+                      <CrossIcon />
+                    </button>
+                  </div>
+                </li>
+              ),
+            )}
           </ul>
 
-          <form className="fz-grid fz-grid--menu" onSubmit={handleAdd}>
-            <input
-              className="fz-input fz-input--dashed fz-input--no"
-              aria-label="Bestellnummer"
-              placeholder="Nr."
-              value={no}
-              onChange={(e) => setNo(e.target.value)}
-            />
-            <input
-              className="fz-input fz-input--dashed"
-              aria-label="Gericht"
-              placeholder="Neues Gericht …"
-              value={dish}
-              onChange={(e) => setDish(e.target.value)}
-            />
-            <input
-              className="fz-input fz-input--dashed fz-hide-sm"
-              style={{ fontSize: 16 }}
-              aria-label="Beschreibung"
-              placeholder="Beschreibung (optional)"
-              value={desc}
-              onChange={(e) => setDesc(e.target.value)}
-            />
-            <input
-              className="fz-input fz-input--dashed fz-right"
-              aria-label="Preis in Euro"
-              placeholder="0,00 €"
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-            <button type="submit" className="fz-btn" disabled={busy} style={{ height: 40, padding: '0 8px', marginBottom: 4, fontSize: 16, justifyContent: 'center' }}>
-              Eintragen
-            </button>
-          </form>
+          <MenuItemForm
+            menu={menu}
+            onSubmit={(next) => onAddItem(current.id, next)}
+          />
         </>
       )}
 
@@ -237,4 +204,8 @@ export function MenuEditor({
       </div>
     </>
   );
+}
+
+function toFormInitial(item: MenuItem) {
+  return { number: item.number, name: item.name, description: item.description ?? '', priceCents: item.priceCents };
 }

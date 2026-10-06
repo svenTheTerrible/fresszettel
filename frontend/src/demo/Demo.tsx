@@ -138,6 +138,33 @@ export function Demo() {
     await refreshMenu(id);
   };
 
+  const handleUpdateItem = async (
+    id: string,
+    itemId: string,
+    item: NewMenuItem,
+  ) => {
+    if (!token) return;
+    const r = restaurants.find((x) => x.id === id);
+    if (!r) return;
+    await updateRestaurant(token, {
+      restaurantId: Number(id),
+      name: r.name,
+      phone: r.phone,
+      menuItems: r.menu.map((m) =>
+        m.id === itemId
+          ? {
+              id: Number(itemId),
+              orderNumber: item.number,
+              name: item.name,
+              description: item.description,
+              price: item.priceCents / 100,
+            }
+          : toMenuItemInput(m),
+      ),
+    });
+    await refreshMenu(id);
+  };
+
   const handleDeleteItem = async (id: string, itemId: string) => {
     if (!token) return;
     const r = restaurants.find((x) => x.id === id);
@@ -179,6 +206,7 @@ export function Demo() {
               onCreateRestaurant={handleCreateRestaurant}
               onUpdateRestaurant={handleUpdateRestaurant}
               onAddItem={handleAddItem}
+              onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
               onCreateInvitation={async ({
                 restaurantId,
