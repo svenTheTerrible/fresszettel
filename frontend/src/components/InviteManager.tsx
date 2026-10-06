@@ -69,7 +69,7 @@ export function InviteManager({
                   <td className="fz-ellipsis">{inv.restaurantName}</td>
                   <td className="fz-hide-sm">{formatWindow(inv.validFrom, inv.validUntil)}</td>
                   <td className="fz-hide-sm fz-right">{inv.orderCount ?? '–'}</td>
-                  <td className="fz-right fz-nowrap">{inv.totalCents != null ? formatEuro(inv.totalCents) : '–'}</td>
+                  <td className="fz-right fz-nowrap">{inv.total != null ? formatEuro(Math.round(inv.total * 100)) : '–'}</td>
                   <td>
                     {status === 'abgelaufen' ? (
                       <span className="fz-muted" style={{ fontSize: 16 }}>

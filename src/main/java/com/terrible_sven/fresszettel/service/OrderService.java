@@ -62,13 +62,13 @@ public class OrderService {
 				.orElse(null);
 
 		List<Order> orders = orderRepository.findByOrderBatchId(batch.getId());
-		long totalCents = orders.stream()
-				.mapToLong(order -> {
+		double total = orders.stream()
+				.mapToDouble(order -> {
 					int quantity = order.getQuantity() == null ? 0 : order.getQuantity();
 					double price = order.getMenuItem() != null && order.getMenuItem().getPrice() != null
 							? order.getMenuItem().getPrice()
 							: 0;
-					return Math.round(price * 100) * quantity;
+					return price * quantity;
 				})
 				.sum();
 
@@ -80,7 +80,7 @@ public class OrderService {
 				batch.getTimestamp(),
 				batch.getDeadline(),
 				orders.size(),
-				totalCents);
+				total);
 	}
 
 	public List<Order> placeOrder(PlaceOrderRequest request) {
