@@ -119,6 +119,11 @@ export async function fetchListInvitations(): Promise<Response> {
   return apiFetch('/api/user/listInvitations');
 }
 
+/** `GET /api/user/orders/{orderBatchId}` — the logged-in user's orders for one batch. */
+export async function fetchOrders(orderBatchId: number | string): Promise<Response> {
+  return apiFetch(`/api/user/orders/${orderBatchId}`);
+}
+
 /**
  * `GET /api/order/get-menu?token=...` — the public order sheet data, looked up
  * by the invitation token (no JWT). Unknown tokens come back as 404.

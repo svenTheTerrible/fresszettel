@@ -4,6 +4,7 @@ import com.terrible_sven.fresszettel.controller.dto.CreateInvitationRequest;
 import com.terrible_sven.fresszettel.controller.dto.CreateRestaurantRequest;
 import com.terrible_sven.fresszettel.controller.dto.InvitationSummary;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
+import com.terrible_sven.fresszettel.controller.dto.OrderView;
 import com.terrible_sven.fresszettel.controller.dto.RestaurantSummary;
 import com.terrible_sven.fresszettel.controller.dto.UpdateRestaurantRequest;
 import com.terrible_sven.fresszettel.service.OrderService;
@@ -61,5 +62,10 @@ public class UserController {
 	@GetMapping("listInvitations")
 	public List<InvitationSummary> listInvitations(@AuthenticationPrincipal Long userId) {
 		return orderService.listInvitations(userId);
+	}
+
+	@GetMapping("orders/{orderBatchId}")
+	public List<OrderView> orders(@PathVariable Long orderBatchId, @AuthenticationPrincipal Long userId) {
+		return orderService.listOrders(orderBatchId, userId);
 	}
 }

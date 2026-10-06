@@ -4,6 +4,7 @@ import com.terrible_sven.fresszettel.controller.dto.CreateInvitationRequest;
 import com.terrible_sven.fresszettel.controller.dto.InvitationSummary;
 import com.terrible_sven.fresszettel.controller.dto.OrderItemInput;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
+import com.terrible_sven.fresszettel.controller.dto.OrderView;
 import com.terrible_sven.fresszettel.controller.dto.PlaceOrderRequest;
 import com.terrible_sven.fresszettel.controller.dto.RestaurantMenu;
 import com.terrible_sven.fresszettel.domain.menuitem.MenuItemRepository;
@@ -53,6 +54,24 @@ public class OrderService {
 	public List<InvitationSummary> listInvitations(Long userId) {
 		return orderBatchRepository.findByUserIdOrderByTimestampDesc(userId).stream()
 				.map(this::toSummary)
+				.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<OrderView> listOrders(Long orderBatchId, Long userId) {
+		OrderBatch batch = orderBatchRepository.findById(orderBatchId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No order batch found"));
+		if (batch.getUserId() == null || !batch.getUserId().equals(userId)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order batch does not belong to this user");
+		}
+		return orderRepository.findByOrderBatchId(orderBatchId).stream()
+				.map(order -> new OrderView(
+						order.getId(),
+						order.getName(),
+						order.getOrderBatchId(),
+						order.getMenuitemId(),
+						order.getQuantity(),
+						order.getPayed()))
 				.toList();
 	}
 

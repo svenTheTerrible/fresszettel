@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes, useSearchParams } from 'react-router';
 import { createInvitation, listInvitations } from '../lib/invitations';
 import {
   createRestaurant,
@@ -10,8 +10,8 @@ import {
   toRestaurant,
   updateRestaurant,
 } from '../lib/restaurants';
+import { listOrders } from '../lib/orders';
 import type { Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
-import { mockOrders } from './mockData';
 import { useAuth } from './auth-context';
 import { AdminPage } from './AdminPage';
 import { OrderSheetPage } from './OrderSheetPage';
@@ -25,15 +25,21 @@ import { RequireAuth } from './RequireAuth';
  *   /admin/speisekarte    -> menu editor   (login required)
  *   /admin/einladung      -> invitation links (login required)
  *   /admin/bestellungen   -> orders overview (login required)
- * Restaurants and menus come from the backend (`/api/user/...`); invitations
- * and orders are still mock data.
+ * Restaurants, menus, invitations and orders all come from the backend
+ * (`/api/user/...`).
  */
 export function Demo() {
   const { token } = useAuth();
+  const [searchParams] = useSearchParams();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  // Which Zettel the admin is looking at: the `?zettel=` id, else the newest.
+  const zettelId = searchParams.get('zettel') ?? invitations[0]?.id ?? null;
+  const currentRestaurantId =
+    invitations.find((i) => i.id === zettelId)?.restaurantId ?? null;
 
   // Load the user's restaurants once a token is present.
   useEffect(() => {
@@ -95,6 +101,48 @@ export function Demo() {
       cancelled = true;
     };
   }, [token, selectedId]);
+
+  // Load the current Zettel's restaurant menu so dish names and prices resolve.
+  useEffect(() => {
+    if (!token || !currentRestaurantId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const items = await listMenuItems(currentRestaurantId);
+        if (cancelled) return;
+        setRestaurants((rs) =>
+          rs.map((r) =>
+            r.id === currentRestaurantId
+              ? { ...r, menu: items.map(toMenuItem) }
+              : r,
+          ),
+        );
+      } catch {
+        // Backend unreachable — leave the menu as is.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, currentRestaurantId]);
+
+  // Load the current Zettel's orders whenever the selection or session changes.
+  useEffect(() => {
+    if (!token || !zettelId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await listOrders(zettelId);
+        if (cancelled) return;
+        setOrders(list);
+      } catch {
+        if (!cancelled) setOrders([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, zettelId]);
 
   /** Re-fetch one restaurant's menu so item ids stay canonical. */
   const refreshMenu = async (restaurantId: string) => {
