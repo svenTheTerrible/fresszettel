@@ -14,10 +14,12 @@ export interface AdminLayoutProps {
   hrefFor?: (tab: AdminTab) => string;
   /** Optional client-side navigation (e.g. react-router's navigate). */
   onNavigate?: (tab: AdminTab) => void;
+  /** Optional sign-out handler; renders a "Abmelden" button in the header when provided. */
+  onLogout?: () => void;
 }
 
 /** Desk background, logo, index tabs and the lined sheet for all admin screens. */
-export function AdminLayout({ active, children, hrefFor = (t) => `#/admin/${t}`, onNavigate }: AdminLayoutProps) {
+export function AdminLayout({ active, children, hrefFor = (t) => `#/admin/${t}`, onNavigate, onLogout }: AdminLayoutProps) {
   const handleClick = (tab: AdminTab) => (e: MouseEvent<HTMLAnchorElement>) => {
     if (!onNavigate || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
@@ -30,6 +32,11 @@ export function AdminLayout({ active, children, hrefFor = (t) => `#/admin/${t}`,
         <header className="fz-admin__header">
           <span className="fz-logo fz-logo--small">Fresszettel</span>
           <span className="fz-admin__badge">Admin</span>
+          {onLogout && (
+            <button type="button" className="fz-link fz-admin__logout" onClick={onLogout}>
+              Abmelden
+            </button>
+          )}
         </header>
         <nav className="fz-tabs" aria-label="Admin-Bereiche">
           {TABS.map((tab) => (

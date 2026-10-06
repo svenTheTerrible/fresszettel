@@ -4,6 +4,8 @@
  * in localStorage so the admin pages stay unlocked across a refresh.
  */
 
+import { fetchCreateAccount, fetchLogin } from './api';
+
 const TOKEN_KEY = 'fresszettel.accessToken';
 
 /** Read the stored access token, or null when not logged in. */
@@ -44,11 +46,7 @@ interface AuthResponse {
 export async function login(email: string, password: string): Promise<string> {
   let response: Response;
   try {
-    response = await fetch('/api/authentification/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    response = await fetchLogin(email, password);
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }
@@ -79,11 +77,7 @@ export async function login(email: string, password: string): Promise<string> {
 export async function register(email: string, password: string): Promise<void> {
   let response: Response;
   try {
-    response = await fetch('/api/authentification/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    response = await fetchCreateAccount(email, password);
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }
