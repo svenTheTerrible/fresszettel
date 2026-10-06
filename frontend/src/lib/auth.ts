@@ -33,9 +33,14 @@ export function clearToken(): void {
   }
 }
 
+/**
+ * Login body. A successful login always carries both tokens as non-empty
+ * strings (JWTs minted by `JwtService`); a failed login is an empty body, not
+ * a body with null fields.
+ */
 interface AuthResponse {
-  accessToken?: string;
-  refreshToken?: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 /**
