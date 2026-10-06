@@ -42,6 +42,7 @@ public class RestaurantService {
 			menuItem.setRestaurant(restaurant);
 			menuItem.setOrderNumber(input.orderNumber());
 			menuItem.setName(input.name());
+			menuItem.setDescription(input.description());
 			menuItem.setPrice(input.price());
 			menuItem.setRestaurantId(restaurant.getId());
 
@@ -64,8 +65,9 @@ public class RestaurantService {
 				menuItem.setRestaurantId(restaurant.getId());
 				menuItem.setOrderNumber(input.orderNumber());
 				menuItem.setName(input.name());
+				menuItem.setDescription(input.description());
 				menuItem.setPrice(input.price());
-				
+
 				menuItemRepository.save(menuItem);
 				keptMenuItemIds.add(menuItem.getId());
 			} else {
@@ -74,6 +76,7 @@ public class RestaurantService {
 					.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Menu item not found"));
 				menuItem.setOrderNumber(input.orderNumber());
 				menuItem.setName(input.name());
+				menuItem.setDescription(input.description());
 				menuItem.setPrice(input.price());
 				menuItem.setRestaurantId(restaurant.getId());
 				menuItemRepository.save(menuItem);
@@ -105,7 +108,7 @@ public class RestaurantService {
 		restaurantRepository.findOwnedById(restaurantId, userId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
 		return menuItemRepository.findAllByRestaurantId(restaurantId).stream()
-			.map(menuItem -> new MenuItemView(menuItem.getId(), menuItem.getOrderNumber(), menuItem.getName(), menuItem.getPrice()))
+			.map(menuItem -> new MenuItemView(menuItem.getId(), menuItem.getOrderNumber(), menuItem.getName(), menuItem.getDescription(), menuItem.getPrice()))
 			.toList();
 	}
 }

@@ -55,7 +55,7 @@ public class OrderService {
 
 		String restaurantName = restaurantRepository.findById(restaurantId).map(Restaurant::getName).orElse(null);
 		List<MenuItemView> menuItems = menuItemRepository.findAllByRestaurantId(restaurantId).stream()
-				.map(item -> new MenuItemView(item.getId(), item.getOrderNumber(), item.getName(), item.getPrice()))
+				.map(item -> new MenuItemView(item.getId(), item.getOrderNumber(), item.getName(), item.getDescription(), item.getPrice()))
 				.toList();
 
 		return Optional.of(new RestaurantMenu(restaurantName, menuItems));
