@@ -1,0 +1,264 @@
+import { useMemo, useState } from 'react';
+import type { OrderDraft, Restaurant } from '../types';
+import { formatEuro, formatTime } from '../lib/format';
+import { useCountdown } from '../hooks/useCountdown';
+
+export interface OrderSheetProps {
+  restaurant: Restaurant;
+  /** End of the invitation window (ISO string or Date). After this the sheet closes itself. */
+  validUntil: string | Date;
+  /** Prefill, e.g. when the user reopens the link and already has an order. */
+  initialName?: string;
+  initialQuantities?: Record<string, number>;
+  initiallySubmitted?: boolean;
+  /** Called on "Zettel abgeben" (and again after "Nochmal ändern"). Throw to show an error. */
+  onSubmit: (draft: OrderDraft) => Promise<void> | void;
+  maxQuantity?: number;
+}
+
+/** The page behind the invitation link: tick dishes, set quantities, hand in the sheet. */
+export function OrderSheet({
+  restaurant,
+  validUntil,
+  initialName = '',
+  initialQuantities = {},
+  initiallySubmitted = false,
+  onSubmit,
+  maxQuantity = 20,
+}: OrderSheetProps) {
+  const [name, setName] = useState(initialName);
+  const [qty, setQty] = useState<Record<string, number>>(initialQuantities);
+  const [submitted, setSubmitted] = useState(initiallySubmitted);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const countdown = useCountdown(validUntil);
+  const deadline = formatTime(validUntil);
+
+  const setQuantity = (id: string, q: number) =>
+    setQty((prev) => ({ ...prev, [id]: Math.max(0, Math.min(maxQuantity, q)) }));
+
+  const chosen = useMemo(
+    () => restaurant.menu.filter((m) => (qty[m.id] ?? 0) > 0).map((m) => ({ item: m, quantity: qty[m.id] })),
+    [restaurant.menu, qty],
+  );
+  const totalCents = chosen.reduce((sum, c) => sum + c.item.priceCents * c.quantity, 0);
+  const summary = chosen.length
+    ? chosen.map((c) => `${c.quantity}× Nr. ${c.item.number}`).join(', ')
+    : 'noch nichts angestrichen';
+
+  const trimmedName = name.trim();
+  const cannotSubmit = busy || chosen.length === 0 || trimmedName.length === 0;
+  const hint = error
+    ? error
+    : !trimmedName
+      ? 'Erst noch deinen Namen eintragen.'
+      : chosen.length
+        ? `Du kannst bis ${deadline} Uhr noch ändern.`
+        : 'Streich mindestens ein Gericht an.';
+
+  const handleSubmit = async () => {
+    if (cannotSubmit) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onSubmit({
+        name: trimmedName,
+        lines: chosen.map((c) => ({ menuItemId: c.item.id, quantity: c.quantity })),
+      });
+      setSubmitted(true);
+    } catch (e) {
+      setError(e instanceof Error && e.message ? e.message : 'Das hat nicht geklappt. Versuch es nochmal.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const view: 'open' | 'done' | 'expired' = submitted ? 'done' : countdown.expired ? 'expired' : 'open';
+
+  return (
+    <div className="fz-desk">
+      <main className="fz-sheet fz-sheet--order">
+        <div className="fz-row fz-row--double fz-row--between">
+          <h1 className="fz-logo">Fresszettel</h1>
+          {!countdown.expired && (
+            <div className="fz-circled" aria-live="off">
+              <span className="fz-hide-sm">noch </span>
+              {countdown.label}
+            </div>
+          )}
+        </div>
+
+        <div className="fz-row fz-row--grow">
+          <span className="fz-text fz-strong-ink" style={{ fontSize: 22 }}>
+            {restaurant.name}
+          </span>
+          <span className="fz-small fz-muted">
+            {restaurant.phone ? `· Tel. ${restaurant.phone} ` : ''}· bestellt wird um {deadline}
+          </span>
+        </div>
+
+        {view === 'open' && (
+          <>
+            <div className="fz-row">
+              <p className="fz-small fz-muted" style={{ margin: 0 }}>
+                Tipp auf ein Gericht, um es anzustreichen. Mit + und − änderst du die Menge.
+              </p>
+            </div>
+
+            <div className="fz-spacer" />
+
+            <div className="fz-row">
+              <label htmlFor="fz-eater" className="fz-text fz-nowrap">
+                Dein Name:
+              </label>
+              <input
+                id="fz-eater"
+                className="fz-input fz-input--hand fz-input--name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="z. B. Sven"
+                autoComplete="given-name"
+                maxLength={60}
+              />
+            </div>
+
+            <div className="fz-spacer" />
+
+            <div className="fz-grid fz-grid--order fz-th" aria-hidden="true">
+              <span className="fz-right">Nr.</span>
+              <span>Gericht</span>
+              <span className="fz-right">Preis</span>
+              <span style={{ textAlign: 'center' }}>Menge</span>
+            </div>
+
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label="Speisekarte">
+              {restaurant.menu.map((item) => {
+                const q = qty[item.id] ?? 0;
+                const has = q > 0;
+                return (
+                  <li key={item.id} className="fz-grid fz-grid--order">
+                    <span className="fz-no">{item.number}</span>
+                    <button
+                      type="button"
+                      className="fz-pick"
+                      aria-pressed={has}
+                      onClick={() => setQuantity(item.id, has ? 0 : 1)}
+                    >
+                      <span className={`fz-pick__name${has ? ' fz-highlight' : ''}`}>{item.name}</span>
+                      {item.description && <span className="fz-pick__desc fz-hide-sm">{item.description}</span>}
+                    </button>
+                    <span className="fz-text fz-right fz-nowrap">{formatEuro(item.priceCents)}</span>
+                    <div className="fz-qty">
+                      {has && (
+                        <>
+                          <button
+                            type="button"
+                            className="fz-qbtn"
+                            aria-label={`${item.name}: eins weniger`}
+                            onClick={() => setQuantity(item.id, q - 1)}
+                          >
+                            −
+                          </button>
+                          <span className="fz-qty__count" aria-label={`${q} Stück`}>
+                            {q}×
+                          </span>
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        className="fz-qbtn fz-qbtn--outline"
+                        aria-label={`${item.name}: eins mehr`}
+                        disabled={q >= maxQuantity}
+                        onClick={() => setQuantity(item.id, q + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="fz-spacer" />
+
+            <div className="fz-row fz-row--grow">
+              <span className="fz-small fz-muted fz-nowrap">Dein Zettel:</span>
+              <span className="fz-hand" style={{ fontSize: 26, lineHeight: '32px' }}>
+                {summary}
+              </span>
+            </div>
+
+            <div className="fz-row fz-row--between">
+              <span className="fz-text">Summe</span>
+              <span className="fz-total">{formatEuro(totalCents)}</span>
+            </div>
+
+            <div className="fz-spacer" />
+
+            <div className="fz-row fz-row--double fz-row--center" style={{ gap: 20, flexWrap: 'wrap' }}>
+              <button type="button" className="fz-btn fz-btn--stamp" disabled={cannotSubmit} onClick={handleSubmit}>
+                {busy ? 'Wird abgegeben …' : 'Zettel abgeben'}
+              </button>
+              <span role={error ? 'alert' : undefined} className={error ? 'fz-error' : 'fz-muted'} style={{ fontSize: 15, lineHeight: '22px' }}>
+                {hint}
+              </span>
+            </div>
+          </>
+        )}
+
+        {view === 'done' && (
+          <>
+            <div className="fz-spacer" />
+            <div className="fz-block" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <div style={{ height: 144, display: 'flex', alignItems: 'center' }}>
+                <div role="status" className="fz-stamp">
+                  Abgegeben
+                </div>
+              </div>
+              <p className="fz-text" style={{ margin: 0, lineHeight: '48px' }}>
+                Danke, <strong style={{ color: 'var(--fz-ink)' }}>{trimmedName}</strong>! Dein Zettel liegt beim Admin.
+              </p>
+              <p className="fz-hand" style={{ margin: 0, fontSize: 28, lineHeight: '48px' }}>
+                {summary} · {formatEuro(totalCents)}
+              </p>
+              {!countdown.expired && (
+                <>
+                  <p className="fz-small fz-muted" style={{ margin: 0, lineHeight: '48px' }}>
+                    Bis {deadline} Uhr kannst du noch ändern (noch {countdown.label}).
+                  </p>
+                  <div style={{ height: 96, display: 'flex', alignItems: 'center' }}>
+                    <button type="button" className="fz-btn fz-btn--stamp fz-btn--stamp-sm" onClick={() => setSubmitted(false)}>
+                      Nochmal ändern
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {view === 'expired' && (
+          <>
+            <div className="fz-spacer" />
+            <div className="fz-block">
+              <p
+                className="fz-hand"
+                style={{ margin: 0, fontWeight: 700, fontSize: 56, lineHeight: '96px', color: 'var(--fz-red)', transform: 'rotate(-2deg)' }}
+              >
+                Zu spät, der Zettel ist weg.
+              </p>
+              <p className="fz-text" style={{ margin: 0, lineHeight: '48px' }}>
+                Dieser Link war bis {deadline} Uhr gültig. Jetzt wird schon telefoniert.
+              </p>
+              <p className="fz-small fz-muted" style={{ margin: 0, lineHeight: '48px' }}>
+                Hast du noch Hunger? Frag beim Admin nach einem neuen Link.
+              </p>
+              <div style={{ height: 240 }} />
+            </div>
+          </>
+        )}
+      </main>
+      <p className="fz-footer-note">Fresszettel · Bestellen wie früher, nur ohne Kuli.</p>
+    </div>
+  );
+}
