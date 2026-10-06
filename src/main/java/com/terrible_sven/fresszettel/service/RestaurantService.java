@@ -31,6 +31,7 @@ public class RestaurantService {
 	public void createRestaurant(CreateRestaurantRequest request, Long userId) {
 		Restaurant restaurant = new Restaurant();
 		restaurant.setName(request.name());
+		restaurant.setPhone(request.phone());
 		restaurant.setUserId(userId);
 		restaurant.setTimestamp(LocalDateTime.now());
 
@@ -53,6 +54,7 @@ public class RestaurantService {
 		Restaurant restaurant = restaurantRepository.findOwnedById(request.restaurantId(), userId)
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found"));
 		restaurant.setName(request.name());
+		restaurant.setPhone(request.phone());
 		restaurant.setTimestamp(LocalDateTime.now());
 		restaurantRepository.save(restaurant);
 		Set<Long> keptMenuItemIds = new HashSet<>();

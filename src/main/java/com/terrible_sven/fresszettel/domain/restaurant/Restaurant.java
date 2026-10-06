@@ -31,6 +31,8 @@ public class Restaurant {
 
 	private String name;
 
+	private String phone;
+
 	private LocalDateTime timestamp;
 
 	@OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
