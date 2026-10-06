@@ -24,7 +24,7 @@ export interface InvitationView {
   validFrom: string | null;
   validUntil: string | null;
   orderCount: number | null;
-  totalCents: number | null;
+  total: number | null;
 }
 
 function assertOk(response: Response): void {
@@ -47,7 +47,7 @@ export function toInvitation(view: InvitationView): Invitation {
     validFrom: view.validFrom ?? '',
     validUntil: view.validUntil ?? '',
     orderCount: view.orderCount ?? undefined,
-    totalCents: view.totalCents ?? undefined,
+    total: view.total ?? undefined,
   };
 }
 

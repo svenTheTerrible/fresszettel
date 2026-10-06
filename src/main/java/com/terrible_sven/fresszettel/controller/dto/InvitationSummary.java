@@ -10,5 +10,5 @@ public record InvitationSummary(
 		LocalDateTime validFrom,
 		LocalDateTime validUntil,
 		int orderCount,
-		long totalCents) {
+		double total) {
 }

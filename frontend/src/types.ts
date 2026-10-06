@@ -30,7 +30,8 @@ export interface Invitation {
   validUntil: string;
   /** Optional aggregates for the history list. */
   orderCount?: number;
-  totalCents?: number;
+  /** Total amount in euro (e.g. 42.5), as passed by the backend. */
+  total?: number;
 }
 
 export interface OrderLine {
