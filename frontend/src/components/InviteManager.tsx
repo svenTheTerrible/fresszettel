@@ -71,27 +71,25 @@ export function InviteManager({
                   <td className="fz-hide-sm fz-right">{inv.orderCount ?? '–'}</td>
                   <td className="fz-right fz-nowrap">{inv.total != null ? formatEuro(Math.round(inv.total * 100)) : '–'}</td>
                   <td>
-                    {status === 'abgelaufen' ? (
-                      <span className="fz-muted" style={{ fontSize: 16 }}>
-                        abgelaufen
-                      </span>
-                    ) : (
-                      <a
-                        href={ordersHref(inv)}
-                        onClick={
-                          onOpenOrders
-                            ? (e) => {
-                                e.preventDefault();
-                                onOpenOrders(inv);
-                              }
-                            : undefined
-                        }
-                        className="fz-hand fz-status-link"
-                        style={{ fontWeight: 700, fontSize: 24, color: 'var(--fz-green)' }}
-                      >
-                        {status} · ansehen
-                      </a>
-                    )}
+                    <a
+                      href={ordersHref(inv)}
+                      onClick={
+                        onOpenOrders
+                          ? (e) => {
+                              e.preventDefault();
+                              onOpenOrders(inv);
+                            }
+                          : undefined
+                      }
+                      className="fz-hand fz-status-link"
+                      style={{
+                        fontWeight: 700,
+                        fontSize: status === 'abgelaufen' ? 16 : 24,
+                        color: status === 'abgelaufen' ? 'var(--fz-muted)' : 'var(--fz-green)',
+                      }}
+                    >
+                      {status} · ansehen
+                    </a>
                   </td>
                 </tr>
               );
