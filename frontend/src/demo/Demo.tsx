@@ -10,7 +10,7 @@ import {
   toRestaurant,
   updateRestaurant,
 } from '../lib/restaurants';
-import { listOrders } from '../lib/orders';
+import { listOrders, setOrderPaid } from '../lib/orders';
 import type { Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
 import { useAuth } from './auth-context';
 import { AdminPage } from './AdminPage';
@@ -249,6 +249,18 @@ export function Demo() {
     return created;
   };
 
+  /** Persist a checkbox toggle to the backend, then mirror it into local state. */
+  const handleTogglePaid = async (orderId: string, paid: boolean) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+    try {
+      await setOrderPaid(order.invitationId, order.name, paid);
+    } catch {
+      return;
+    }
+    setOrders((os) => os.map((o) => (o.id === orderId ? { ...o, paid } : o)));
+  };
+
   return (
     <Routes>
       <Route path="/z/:token" element={<OrderSheetPage />} />
@@ -268,13 +280,9 @@ export function Demo() {
               onAddItem={handleAddItem}
               onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
-               onCreateInvitation={handleCreateInvitation}
-              onTogglePaid={(orderId, paid) =>
-                setOrders((os) =>
-                  os.map((o) => (o.id === orderId ? { ...o, paid } : o)),
-                )
-              }
-            />
+                onCreateInvitation={handleCreateInvitation}
+               onTogglePaid={handleTogglePaid}
+             />
           </RequireAuth>
         }
       />

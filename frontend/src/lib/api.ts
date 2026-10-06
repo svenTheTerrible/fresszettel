@@ -124,6 +124,26 @@ export async function fetchOrders(orderBatchId: number | string): Promise<Respon
   return apiFetch(`/api/user/orders/${orderBatchId}`);
 }
 
+/** Body for `PUT /api/user/orders/{orderBatchId}/pay`. */
+export interface SetOrderPaidRequest {
+  /** The orderer's name — groups that person's order rows in the batch. */
+  name: string;
+  /** Whether the person has paid. */
+  paid: boolean;
+}
+
+/** `PUT /api/user/orders/{orderBatchId}/pay` — mark a person's order paid/unpaid. */
+export async function fetchSetOrderPaid(
+  orderBatchId: number | string,
+  request: SetOrderPaidRequest,
+): Promise<Response> {
+  return apiFetch(`/api/user/orders/${orderBatchId}/pay`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+}
+
 /**
  * `GET /api/order/get-menu?token=...` — the public order sheet data, looked up
  * by the invitation token (no JWT). Unknown tokens come back as 404.

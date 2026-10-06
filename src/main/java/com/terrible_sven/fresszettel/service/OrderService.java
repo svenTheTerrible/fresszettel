@@ -75,6 +75,16 @@ public class OrderService {
 				.toList();
 	}
 
+	@Transactional
+	public void setOrderPaid(Long orderBatchId, String name, boolean paid, Long userId) {
+		OrderBatch batch = orderBatchRepository.findById(orderBatchId)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No order batch found"));
+		if (batch.getUserId() == null || !batch.getUserId().equals(userId)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order batch does not belong to this user");
+		}
+		orderRepository.setPayedByOrderBatchIdAndName(orderBatchId, name, paid);
+	}
+
 	private InvitationSummary toSummary(OrderBatch batch) {
 		String restaurantName = restaurantRepository.findById(batch.getRestaurantId())
 				.map(Restaurant::getName)
