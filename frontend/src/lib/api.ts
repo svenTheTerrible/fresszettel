@@ -118,3 +118,33 @@ export async function fetchCreateInvitation(
 export async function fetchListInvitations(): Promise<Response> {
   return apiFetch('/api/user/listInvitations');
 }
+
+/**
+ * `GET /api/order/get-menu?token=...` — the public order sheet data, looked up
+ * by the invitation token (no JWT). Unknown tokens come back as 404.
+ */
+export async function fetchOrderMenu(token: string): Promise<Response> {
+  return apiFetch(`/api/order/get-menu?token=${encodeURIComponent(token)}`, {
+    auth: false,
+  });
+}
+
+/** Body for `POST /api/order/place-order`. */
+export interface PlaceOrderRequest {
+  /** The invitation token the sheet was opened with. */
+  token: string;
+  name: string;
+  items: { menuItemId: number; quantity: number }[];
+}
+
+/** `POST /api/order/place-order` — public, no JWT. */
+export async function fetchPlaceOrder(
+  request: PlaceOrderRequest,
+): Promise<Response> {
+  return apiFetch('/api/order/place-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+    auth: false,
+  });
+}
