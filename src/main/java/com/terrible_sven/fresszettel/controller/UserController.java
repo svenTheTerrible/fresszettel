@@ -6,6 +6,7 @@ import com.terrible_sven.fresszettel.controller.dto.InvitationSummary;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
 import com.terrible_sven.fresszettel.controller.dto.OrderView;
 import com.terrible_sven.fresszettel.controller.dto.RestaurantSummary;
+import com.terrible_sven.fresszettel.controller.dto.SetOrderPaidRequest;
 import com.terrible_sven.fresszettel.controller.dto.UpdateRestaurantRequest;
 import com.terrible_sven.fresszettel.service.OrderService;
 import com.terrible_sven.fresszettel.service.RestaurantService;
@@ -67,5 +68,13 @@ public class UserController {
 	@GetMapping("orders/{orderBatchId}")
 	public List<OrderView> orders(@PathVariable Long orderBatchId, @AuthenticationPrincipal Long userId) {
 		return orderService.listOrders(orderBatchId, userId);
+	}
+
+	@PutMapping("orders/{orderBatchId}/pay")
+	public void setOrderPaid(
+			@PathVariable Long orderBatchId,
+			@RequestBody SetOrderPaidRequest request,
+			@AuthenticationPrincipal Long userId) {
+		orderService.setOrderPaid(orderBatchId, request.name(), request.paid(), userId);
 	}
 }

@@ -10,6 +10,7 @@ import {
   fetchOrderMenu,
   fetchOrders,
   fetchPlaceOrder,
+  fetchSetOrderPaid,
   type PlaceOrderRequest,
 } from './api';
 import { toMenuItem, type MenuItemView } from './restaurants';
@@ -136,4 +137,22 @@ export async function listOrders(orderBatchId: number | string): Promise<Order[]
   assertOk(response);
   const views = (await response.json()) as OrderView[];
   return toOrders(views, orderBatchId);
+}
+
+/**
+ * Admin side (JWT): mark a person's order in a batch as paid or unpaid.
+ * Persists the state of every order row that person placed in the batch.
+ */
+export async function setOrderPaid(
+  orderBatchId: number | string,
+  name: string,
+  paid: boolean,
+): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetchSetOrderPaid(orderBatchId, { name, paid });
+  } catch {
+    throw new Error('Keine Verbindung zum Server.');
+  }
+  assertOk(response);
 }
