@@ -106,14 +106,18 @@ public class OrderService {
 
 	public Optional<RestaurantMenu> getOrderByToken(String token) {
 		OrderBatch batch = orderBatchRepository.findByToken(token)
-				.orElseThrow(() -> new IllegalArgumentException("No order batch found for token"));
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No order batch found for token"));
 		Long restaurantId = batch.getRestaurantId();
 
-		String restaurantName = restaurantRepository.findById(restaurantId).map(Restaurant::getName).orElse(null);
+		Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
 		List<MenuItemView> menuItems = menuItemRepository.findAllByRestaurantId(restaurantId).stream()
 				.map(item -> new MenuItemView(item.getId(), item.getOrderNumber(), item.getName(), item.getDescription(), item.getPrice()))
 				.toList();
 
-		return Optional.of(new RestaurantMenu(restaurantName, menuItems));
+		return Optional.of(new RestaurantMenu(
+				restaurant != null ? restaurant.getName() : null,
+				restaurant != null ? restaurant.getPhone() : null,
+				batch.getDeadline(),
+				menuItems));
 	}
 }

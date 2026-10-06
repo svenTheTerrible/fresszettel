@@ -18,8 +18,6 @@ import { OrderSheetPage } from './OrderSheetPage';
 import { LoginPage } from './LoginPage';
 import { RequireAuth } from './RequireAuth';
 
-const uid = () => Math.random().toString(36).slice(2, 8);
-
 /**
  * Demo wiring, routed with react-router:
  *   /login                -> sign in (required for the admin area)
@@ -205,18 +203,7 @@ export function Demo() {
 
   return (
     <Routes>
-      <Route
-        path="/z/:token"
-        element={
-          <OrderSheetPage
-            restaurants={restaurants}
-            invitations={invitations}
-            onPlaceOrder={(invitationId, draft) =>
-              setOrders((os) => [...os, { id: uid(), invitationId, ...draft }])
-            }
-          />
-        }
-      />
+      <Route path="/z/:token" element={<OrderSheetPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/admin/:tab"
