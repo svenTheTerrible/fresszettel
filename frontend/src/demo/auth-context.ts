@@ -5,6 +5,8 @@ export interface AuthContextValue {
   token: string | null;
   /** Log in; throws (with a user-facing message) on failure. */
   login: (email: string, password: string) => Promise<void>;
+  /** Create an account; throws (with a user-facing message) on failure. */
+  register: (email: string, password: string) => Promise<void>;
   /** Clear the session. */
   logout: () => void;
 }
