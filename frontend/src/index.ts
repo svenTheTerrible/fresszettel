@@ -10,6 +10,8 @@ export { MenuItemForm } from './components/MenuItemForm';
 export type { MenuItemFormProps } from './components/MenuItemForm';
 export { InviteManager } from './components/InviteManager';
 export type { InviteManagerProps } from './components/InviteManager';
+export { GenerateLinkButton, LinkSlip } from './components/GenerateLinkButton';
+export type { GenerateLinkButtonProps, LinkSlipProps, InvitationDraftResult } from './components/GenerateLinkButton';
 export { OrdersOverview } from './components/OrdersOverview';
 export type { OrdersOverviewProps } from './components/OrdersOverview';
 export { useCountdown } from './hooks/useCountdown';

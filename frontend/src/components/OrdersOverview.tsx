@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Invitation, Order, Restaurant } from '../types';
 import { compareOrderNumbers, formatEuro, formatShortDate, formatTime, formatWindow } from '../lib/format';
 import { useCountdown } from '../hooks/useCountdown';
+import { LinkSlip } from './GenerateLinkButton';
 
 export interface OrdersOverviewProps {
   invitation: Invitation;
@@ -16,6 +17,7 @@ export interface OrdersOverviewProps {
 export function OrdersOverview({ invitation, restaurant, orders, onTogglePaid }: OrdersOverviewProps) {
   const countdown = useCountdown(invitation.validUntil);
   const tracksPaid = Boolean(onTogglePaid);
+  const [showLink, setShowLink] = useState(false);
 
   const { people, aggregate, totalCents, paidCents } = useMemo(() => {
     const byId = new Map(restaurant.menu.map((m) => [m.id, m]));
@@ -154,6 +156,14 @@ export function OrdersOverview({ invitation, restaurant, orders, onTogglePaid }:
           Neue Zettel tauchen hier von selbst auf, solange der Link läuft.
         </p>
       </div>
+
+      <div className="fz-row fz-row--double fz-row--center" style={{ gap: 16, flexWrap: 'wrap' }}>
+        <button type="button" className="fz-btn" onClick={() => setShowLink((s) => !s)}>
+          {showLink ? 'Link verstecken' : 'Link anzeigen'}
+        </button>
+      </div>
+
+      {showLink && <LinkSlip invitation={invitation} />}
     </>
   );
 }
