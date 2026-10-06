@@ -70,3 +70,25 @@ export async function login(email: string, password: string): Promise<string> {
   }
   return data.accessToken;
 }
+
+/**
+ * Create a new account against the backend's
+ * `POST /api/authentification/create` endpoint. Throws an Error with a
+ * user-facing message when the request can't be made or the server rejects it.
+ */
+export async function register(email: string, password: string): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetch('/api/authentification/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    throw new Error('Keine Verbindung zum Server.');
+  }
+
+  if (!response.ok) {
+    throw new Error('Etwas ist schiefgelaufen. Versuch es nochmal.');
+  }
+}
