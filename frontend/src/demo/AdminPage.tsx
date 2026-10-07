@@ -4,7 +4,7 @@ import { InviteManager } from '../components/InviteManager';
 import { MenuEditor } from '../components/MenuEditor';
 import { OrdersOverview } from '../components/OrdersOverview';
 import { useAuth } from './auth-context';
-import type { AdminTab, Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
+import type { AdminTab, Invitation, NewInvitation, NewMenuItem, Restaurant } from '../types';
 
 const TABS: AdminTab[] = ['speisekarte', 'einladung', 'bestellungen'];
 const adminHref = (tab: AdminTab, zettelId?: string) =>
@@ -13,7 +13,6 @@ const adminHref = (tab: AdminTab, zettelId?: string) =>
 export interface AdminPageProps {
   restaurants: Restaurant[];
   invitations: Invitation[];
-  orders: Order[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onCreateRestaurant: () => void;
@@ -22,14 +21,12 @@ export interface AdminPageProps {
   onUpdateItem: (id: string, itemId: string, item: NewMenuItem) => void;
   onDeleteItem: (id: string, itemId: string) => void;
   onCreateInvitation: (input: NewInvitation) => Promise<Invitation>;
-  onTogglePaid: (orderId: string, paid: boolean) => void;
 }
 
 /** All admin tabs. */
 export function AdminPage({
   restaurants,
   invitations,
-  orders,
   selectedId,
   onSelect,
   onCreateRestaurant,
@@ -38,7 +35,6 @@ export function AdminPage({
   onUpdateItem,
   onDeleteItem,
   onCreateInvitation,
-  onTogglePaid,
 }: AdminPageProps) {
   const { tab: tabParam } = useParams();
   const [searchParams] = useSearchParams();
@@ -81,8 +77,6 @@ export function AdminPage({
           <OrdersOverview
             invitation={current}
             restaurant={restaurants.find((r) => r.id === current.restaurantId)!}
-            orders={orders.filter((o) => o.invitationId === current.id)}
-            onTogglePaid={onTogglePaid}
           />
         ) : (
           <div className="fz-row">Noch kein Zettel unterwegs.</div>

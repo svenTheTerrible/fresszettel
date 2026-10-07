@@ -10,8 +10,7 @@ import {
   toRestaurant,
   updateRestaurant,
 } from '../lib/restaurants';
-import { listOrders, setOrderPaid } from '../lib/orders';
-import type { Invitation, NewInvitation, NewMenuItem, Order, Restaurant } from '../types';
+import type { Invitation, NewInvitation, NewMenuItem, Restaurant } from '../types';
 import { useAuth } from './auth-context';
 import { AdminPage } from './AdminPage';
 import { OrderSheetPage } from './OrderSheetPage';
@@ -34,7 +33,6 @@ export function Demo() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
 
   // Which Zettel the admin is looking at: the `?zettel=` id, else the newest.
   const zettelId = searchParams.get('zettel') ?? invitations[0]?.id ?? null;
@@ -125,24 +123,6 @@ export function Demo() {
       cancelled = true;
     };
   }, [token, currentRestaurantId]);
-
-  // Load the current Zettel's orders whenever the selection or session changes.
-  useEffect(() => {
-    if (!token || !zettelId) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const list = await listOrders(zettelId);
-        if (cancelled) return;
-        setOrders(list);
-      } catch {
-        if (!cancelled) setOrders([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [token, zettelId]);
 
   /** Re-fetch one restaurant's menu so item ids stay canonical. */
   const refreshMenu = async (restaurantId: string) => {
@@ -249,18 +229,6 @@ export function Demo() {
     return created;
   };
 
-  /** Persist a checkbox toggle to the backend, then mirror it into local state. */
-  const handleTogglePaid = async (orderId: string, paid: boolean) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-    try {
-      await setOrderPaid(order.invitationId, order.name, paid);
-    } catch {
-      return;
-    }
-    setOrders((os) => os.map((o) => (o.id === orderId ? { ...o, paid } : o)));
-  };
-
   return (
     <Routes>
       <Route path="/z/:token" element={<OrderSheetPage />} />
@@ -272,7 +240,6 @@ export function Demo() {
             <AdminPage
               restaurants={restaurants}
               invitations={invitations}
-              orders={orders}
               selectedId={selectedId}
               onSelect={setSelectedId}
               onCreateRestaurant={handleCreateRestaurant}
@@ -281,8 +248,7 @@ export function Demo() {
               onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
                 onCreateInvitation={handleCreateInvitation}
-               onTogglePaid={handleTogglePaid}
-             />
+              />
           </RequireAuth>
         }
       />
