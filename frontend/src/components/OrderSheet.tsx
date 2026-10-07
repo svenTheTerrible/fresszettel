@@ -1,57 +1,59 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { OrderDraft, Restaurant } from '../types';
+import type { OrderDraft } from '../types';
 import { formatEuro, formatTime } from '../lib/format';
+import type { OrderMenuView } from '../lib/orders';
+import type { MenuItemView } from '../lib/restaurants';
 import { useCountdown } from '../hooks/useCountdown';
+import { useSubmitState } from '../hooks/useSubmitState';
 
 export interface OrderSheetProps {
-  restaurant: Restaurant;
-  /** End of the invitation window (ISO string or Date). After this the sheet closes itself. */
-  validUntil: string | Date;
+  /** The order sheet data from the backend (get-menu by token). */
+  view: OrderMenuView;
   /** Prefill, e.g. when the user reopens the link and already has an order. */
-  initialName?: string;
+   initialName?: string;
   initialQuantities?: Record<string, number>;
-  initiallySubmitted?: boolean;
   /** Called on "Zettel abgeben" (and again after "Nochmal ändern"). Throw to show an error. */
   onSubmit: (draft: OrderDraft) => Promise<void> | void;
   /** Called whenever the name or the selected dishes change (for remembering). */
   onPersist?: (name: string, quantities: Record<string, number>) => void;
-  maxQuantity?: number;
 }
 
 /** The page behind the invitation link: tick dishes, set quantities, hand in the sheet. */
 export function OrderSheet({
-  restaurant,
-  validUntil,
+  view,
   initialName = '',
   initialQuantities = {},
-  initiallySubmitted = false,
   onSubmit,
   onPersist,
-  maxQuantity = 20,
 }: OrderSheetProps) {
+  const restaurantName = view.name ?? '';
+  const restaurantPhone = view.phone ?? undefined;
+  const menu: MenuItemView[] = view.menuItems ?? [];
+  const deadline = formatTime(view.deadline ?? '');
+
   const [name, setName] = useState(initialName);
   const [qty, setQty] = useState<Record<string, number>>(initialQuantities);
-  const [submitted, setSubmitted] = useState(initiallySubmitted);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const countdown = useCountdown(validUntil);
-  const deadline = formatTime(validUntil);
+  const [submitted, setSubmitted] = useState(false);
+  const { busy, setBusy, error, setError } = useSubmitState();
+  const countdown = useCountdown(view.deadline ?? '');
 
   // Remember what the visitor typed so reopening the link restores it.
   useEffect(() => {
     onPersist?.(name, qty);
   }, [name, qty, onPersist]);
 
-  const setQuantity = (id: string, q: number) =>
-    setQty((prev) => ({ ...prev, [id]: Math.max(0, Math.min(maxQuantity, q)) }));
+  const setQuantity = (id: number, q: number) =>
+    setQty((prev) => ({ ...prev, [String(id)]: Math.max(0, Math.min(20, q)) }));
 
   const chosen = useMemo(
-    () => restaurant.menu.filter((m) => (qty[m.id] ?? 0) > 0).map((m) => ({ item: m, quantity: qty[m.id] })),
-    [restaurant.menu, qty],
+    () => menu
+        .filter((m) => (qty[String(m.id)] ?? 0) > 0)
+        .map((m) => ({ item: m, quantity: qty[String(m.id)] })),
+    [menu, qty],
   );
-  const totalCents = chosen.reduce((sum, c) => sum + c.item.priceCents * c.quantity, 0);
+  const total = chosen.reduce((sum, c) => sum + (c.item.price ?? 0) * c.quantity, 0);
   const summary = chosen.length
-    ? chosen.map((c) => `${c.quantity}× Nr. ${c.item.number}`).join(', ')
+    ? chosen.map((c) => `${c.quantity}× Nr. ${c.item.orderNumber}`).join(', ')
     : 'noch nichts angestrichen';
 
   const trimmedName = name.trim();
@@ -81,7 +83,7 @@ export function OrderSheet({
     }
   };
 
-  const view: 'open' | 'done' | 'expired' = submitted ? 'done' : countdown.expired ? 'expired' : 'open';
+  const stage: 'open' | 'done' | 'expired' = submitted ? 'done' : countdown.expired ? 'expired' : 'open';
 
   return (
     <div className="fz-desk">
@@ -98,14 +100,14 @@ export function OrderSheet({
 
         <div className="fz-row fz-row--grow">
           <span className="fz-text fz-strong-ink" style={{ fontSize: 22 }}>
-            {restaurant.name}
+            {restaurantName}
           </span>
           <span className="fz-small fz-muted">
-            {restaurant.phone ? `· Tel. ${restaurant.phone} ` : ''}· bestellt wird um {deadline}
+            {restaurantPhone ? `· Tel. ${restaurantPhone} ` : ''}· bestellt wird um {deadline}
           </span>
         </div>
 
-        {view === 'open' && (
+        {stage === 'open' && (
           <>
             <div className="fz-row">
               <p className="fz-small fz-muted" style={{ margin: 0 }}>
@@ -140,12 +142,12 @@ export function OrderSheet({
             </div>
 
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label="Speisekarte">
-              {restaurant.menu.map((item) => {
-                const q = qty[item.id] ?? 0;
+              {menu.map((item) => {
+                const q = qty[String(item.id)] ?? 0;
                 const has = q > 0;
                 return (
                   <li key={item.id} className="fz-grid fz-grid--order">
-                    <span className="fz-no">{item.number}</span>
+                    <span className="fz-no">{item.orderNumber}</span>
                     <button
                       type="button"
                       className="fz-pick"
@@ -155,7 +157,7 @@ export function OrderSheet({
                       <span className={`fz-pick__name${has ? ' fz-highlight' : ''}`}>{item.name}</span>
                       {item.description && <span className="fz-pick__desc fz-hide-sm">{item.description}</span>}
                     </button>
-                    <span className="fz-text fz-right fz-nowrap">{formatEuro(item.priceCents)}</span>
+                    <span className="fz-text fz-right fz-nowrap">{formatEuro(item.price ?? 0)}</span>
                     <div className="fz-qty">
                       {has && (
                         <>
@@ -176,7 +178,7 @@ export function OrderSheet({
                         type="button"
                         className="fz-qbtn fz-qbtn--outline"
                         aria-label={`${item.name}: eins mehr`}
-                        disabled={q >= maxQuantity}
+                        disabled={q >= 20}
                         onClick={() => setQuantity(item.id, q + 1)}
                       >
                         +
@@ -197,8 +199,8 @@ export function OrderSheet({
             </div>
 
             <div className="fz-row fz-row--between">
-              <span className="fz-text">Summe</span>
-              <span className="fz-total">{formatEuro(totalCents)}</span>
+              <span>Summe</span>
+              <span className="fz-total">{formatEuro(total)}</span>
             </div>
 
             <div className="fz-spacer" />
@@ -214,7 +216,7 @@ export function OrderSheet({
           </>
         )}
 
-        {view === 'done' && (
+        {stage === 'done' && (
           <>
             <div className="fz-spacer" />
             <div className="fz-block" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -227,7 +229,7 @@ export function OrderSheet({
                 Danke, <strong style={{ color: 'var(--fz-ink)' }}>{trimmedName}</strong>! Dein Zettel liegt beim Admin.
               </p>
               <p className="fz-hand" style={{ margin: 0, fontSize: 28, lineHeight: '48px' }}>
-                {summary} · {formatEuro(totalCents)}
+                {summary} · {formatEuro(total)}
               </p>
               {!countdown.expired && (
                 <>
@@ -245,7 +247,7 @@ export function OrderSheet({
           </>
         )}
 
-        {view === 'expired' && (
+        {stage === 'expired' && (
           <>
             <div className="fz-spacer" />
             <div className="fz-block">

@@ -1,32 +1,32 @@
 const euro = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
 
-/** 850 -> "8,50 €" */
-export function formatEuro(cents: number): string {
-  return euro.format(cents / 100);
+/** "8,50 €" -> "8,50 €" */
+export function formatEuro(price: number): string {
+  return euro.format(price);
 }
 
-/** "8,50", "8.50", "8,50 €", "8" -> 850. Returns null when it doesn't look like a price. */
+/** "8,50", "8.50", "8,50 €", "8" -> 8.5. Returns null when it doesn't look like a price. */
 export function parseEuro(input: string): number | null {
   const cleaned = input.replace(/€/g, '').replace(/\s/g, '').replace(',', '.');
   if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
-  return Math.round(parseFloat(cleaned) * 100);
+  return parseFloat(cleaned);
 }
 
 /** "12:15" */
-export function formatTime(date: Date | string): string {
-  return new Date(date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+export function formatTime(date: Date | string | null): string {
+  return new Date(date ?? '').toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 }
 
 /** "Fr 02.10." */
-export function formatShortDate(date: Date | string): string {
-  const d = new Date(date);
+export function formatShortDate(date: Date | string | null): string {
+  const d = new Date(date ?? '');
   const weekday = d.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '');
   const day = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   return `${weekday} ${day}`;
 }
 
 /** "11:30–12:15" */
-export function formatWindow(from: Date | string, until: Date | string): string {
+export function formatWindow(from: Date | string | null, until: Date | string | null): string {
   return `${formatTime(from)}–${formatTime(until)}`;
 }
 

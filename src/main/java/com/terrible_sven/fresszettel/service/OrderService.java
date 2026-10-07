@@ -4,9 +4,11 @@ import com.terrible_sven.fresszettel.controller.dto.CreateInvitationRequest;
 import com.terrible_sven.fresszettel.controller.dto.InvitationSummary;
 import com.terrible_sven.fresszettel.controller.dto.OrderItemInput;
 import com.terrible_sven.fresszettel.controller.dto.MenuItemView;
-import com.terrible_sven.fresszettel.controller.dto.OrderView;
+import com.terrible_sven.fresszettel.controller.dto.OrderLineView;
 import com.terrible_sven.fresszettel.controller.dto.PlaceOrderRequest;
+import com.terrible_sven.fresszettel.controller.dto.PersonOrderView;
 import com.terrible_sven.fresszettel.controller.dto.RestaurantMenu;
+import com.terrible_sven.fresszettel.controller.dto.OrdersView;
 import com.terrible_sven.fresszettel.domain.menuitem.MenuItemRepository;
 import com.terrible_sven.fresszettel.domain.order.Order;
 import com.terrible_sven.fresszettel.domain.order.OrderRepository;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,21 +61,44 @@ public class OrderService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<OrderView> listOrders(Long orderBatchId, Long userId) {
-		OrderBatch batch = orderBatchRepository.findById(orderBatchId)
+	public OrdersView getOrdersView(Long zettelId, Long userId) {
+		OrderBatch batch = orderBatchRepository.findById(zettelId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No order batch found"));
 		if (batch.getUserId() == null || !batch.getUserId().equals(userId)) {
 			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Order batch does not belong to this user");
 		}
-		return orderRepository.findByOrderBatchId(orderBatchId).stream()
-				.map(order -> new OrderView(
-						order.getId(),
-						order.getName(),
-						order.getOrderBatchId(),
-						order.getMenuitemId(),
-						order.getQuantity(),
-						order.getPayed()))
+		Long restaurantId = batch.getRestaurantId();
+
+		List<Order> orders = orderRepository.findByOrderBatchId(zettelId);
+		List<PersonOrderView> personViews = orders.stream()
+				.collect(Collectors.groupingBy(Order::getName))
+				.entrySet().stream()
+				.map(entry -> {
+					List<Order> personOrders = entry.getValue();
+					List<OrderLineView> lines = personOrders.stream()
+							.filter(order -> order.getMenuitemId() != null && order.getQuantity() != null)
+							.map(order -> new OrderLineView(order.getMenuitemId(), order.getQuantity()))
+							.toList();
+					boolean paid = personOrders.stream().allMatch(order -> Boolean.TRUE.equals(order.getPayed()));
+					return new PersonOrderView(entry.getKey(), lines, paid);
+				})
 				.toList();
+
+		Restaurant restaurant = restaurantRepository.findById(restaurantId).orElse(null);
+		List<MenuItemView> menuItems = menuItemRepository.findAllByRestaurantId(restaurantId).stream()
+				.map(item -> new MenuItemView(item.getId(), item.getOrderNumber(), item.getName(), item.getDescription(), item.getPrice()))
+				.toList();
+
+		return new OrdersView(
+				batch.getId(),
+				batch.getToken(),
+				restaurantId,
+				restaurant != null ? restaurant.getName() : null,
+				restaurant != null ? restaurant.getPhone() : null,
+				batch.getTimestamp(),
+				batch.getDeadline(),
+				menuItems,
+				personViews);
 	}
 
 	@Transactional

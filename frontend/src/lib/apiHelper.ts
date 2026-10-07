@@ -103,7 +103,6 @@ function refreshAccessToken(): Promise<string | null> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const refreshToken = getStoredRefreshToken();
-      if (!refreshToken || isTokenExpired(refreshToken)) return null;
       try {
         const response = await fetch('/api/authentification/refresh', {
           method: 'POST',

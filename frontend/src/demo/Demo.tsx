@@ -12,7 +12,7 @@ import { RequireAuth } from './RequireAuth';
  *   /z/<token>            -> order sheet (invitation link)
  *   /admin/speisekarte    -> menu editor   (login required)
  *   /admin/einladung      -> invitation links (login required)
- *   /admin/bestellungen   -> orders overview (login required)
+ *   /admin/bestellungen/:id -> orders overview (login required)
  * Restaurants, menus, invitations and orders all come from the backend
  * (`/api/user/...`). MenuEditorPage is self-contained and needs no props.
  */
@@ -38,7 +38,7 @@ export function Demo() {
         }
       />
       <Route
-        path="/admin/bestellungen"
+        path="/admin/bestellungen/:id"
         element={
           <RequireAuth>
             <OrdersPage />
