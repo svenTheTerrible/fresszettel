@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Invitation, Order, Restaurant } from '../types';
+import { listOrders, setOrderPaid } from '../lib/orders';
 import { compareOrderNumbers, formatEuro, formatShortDate, formatTime, formatWindow } from '../lib/format';
 import { useCountdown } from '../hooks/useCountdown';
 import { LinkSlip } from './GenerateLinkButton';
@@ -8,16 +9,41 @@ export interface OrdersOverviewProps {
   invitation: Invitation;
   /** The invitation's restaurant, used to look up dish names and prices. */
   restaurant: Restaurant;
-  orders: Order[];
-  /** Pass this only if your backend tracks payments; otherwise the paid column is hidden. */
-  onTogglePaid?: (orderId: string, paid: boolean) => Promise<void> | void;
 }
 
 /** Admin: incoming orders, the list to read out on the phone, and the total to pay. */
-export function OrdersOverview({ invitation, restaurant, orders, onTogglePaid }: OrdersOverviewProps) {
+export function OrdersOverview({ invitation, restaurant }: OrdersOverviewProps) {
   const countdown = useCountdown(invitation.validUntil);
-  const tracksPaid = Boolean(onTogglePaid);
   const [showLink, setShowLink] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  // Load this Zettel's orders whenever the Zettel changes.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await listOrders(invitation.id);
+        if (!cancelled) setOrders(list);
+      } catch {
+        // Backend unreachable — leave the list empty.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [invitation.id]);
+
+  /** Persist a checkbox toggle to the backend, then mirror it into local state. */
+  const handleTogglePaid = async (orderId: string, paid: boolean) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+    try {
+      await setOrderPaid(order.invitationId, order.name, paid);
+    } catch {
+      return;
+    }
+    setOrders((os) => os.map((o) => (o.id === orderId ? { ...o, paid } : o)));
+  };
 
   const { people, aggregate, totalCents, paidCents } = useMemo(() => {
     const byId = new Map(restaurant.menu.map((m) => [m.id, m]));
@@ -110,7 +136,7 @@ export function OrdersOverview({ invitation, restaurant, orders, onTogglePaid }:
             </h2>
           </div>
           {people.map((p) => (
-            <div key={p.id} className={`fz-grid fz-grid--people${tracksPaid ? '' : ' fz-grid--people-nopaid'}`}>
+            <div key={p.id} className="fz-grid fz-grid--people">
               <span className="fz-hand fz-ellipsis" style={{ fontWeight: 700, fontSize: 27, lineHeight: '34px' }}>
                 {p.name}
               </span>
@@ -120,34 +146,28 @@ export function OrdersOverview({ invitation, restaurant, orders, onTogglePaid }:
               <span className="fz-right fz-nowrap" style={{ fontSize: 19, lineHeight: '30px' }}>
                 {formatEuro(p.sumCents)}
               </span>
-              {tracksPaid && (
-                <label className="fz-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={p.paid}
-                    aria-label={`${p.name} hat bezahlt`}
-                    onChange={() => void onTogglePaid?.(p.id, !p.paid)}
-                  />
-                </label>
-              )}
+              <label className="fz-checkbox">
+                <input
+                  type="checkbox"
+                  checked={p.paid}
+                  aria-label={`${p.name} hat bezahlt`}
+                  onChange={() => void handleTogglePaid(p.id, !p.paid)}
+                />
+              </label>
             </div>
           ))}
-          {tracksPaid && (
-            <>
-              <div className="fz-grid fz-grid--sum fz-muted" style={{ fontSize: 16, lineHeight: '30px' }}>
-                <span>schon bezahlt</span>
-                <span className="fz-right" style={{ paddingRight: 56 }}>
-                  {formatEuro(paidCents)}
-                </span>
-              </div>
-              <div className="fz-grid fz-grid--sum" style={{ fontSize: 19, lineHeight: '30px' }}>
-                <span>noch offen</span>
-                <span className="fz-right" style={{ paddingRight: 56, fontWeight: 700, color: 'var(--fz-red)' }}>
-                  {formatEuro(totalCents - paidCents)}
-                </span>
-              </div>
-            </>
-          )}
+          <div className="fz-grid fz-grid--sum fz-muted" style={{ fontSize: 16, lineHeight: '30px' }}>
+            <span>schon bezahlt</span>
+            <span className="fz-right" style={{ paddingRight: 56 }}>
+              {formatEuro(paidCents)}
+            </span>
+          </div>
+          <div className="fz-grid fz-grid--sum" style={{ fontSize: 19, lineHeight: '30px' }}>
+            <span>noch offen</span>
+            <span className="fz-right" style={{ paddingRight: 56, fontWeight: 700, color: 'var(--fz-red)' }}>
+              {formatEuro(totalCents - paidCents)}
+            </span>
+          </div>
         </section>
       </div>
 
