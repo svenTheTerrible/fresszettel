@@ -18,6 +18,7 @@ export interface MenuEditorProps {
   onAddItem: (restaurantId: number, item: NewMenuItem) => Promise<void> | void;
   onUpdateItem: (restaurantId: number, menuItemId: number, item: NewMenuItem) => Promise<void> | void;
   onDeleteItem: (restaurantId: number, menuItemId: number) => Promise<void> | void;
+  onDeleteRestaurant: (restaurantId: number) => Promise<void> | void;
 }
 
 const errorText = (e: unknown, fallback: string) => (e instanceof Error && e.message ? e.message : fallback);
@@ -33,6 +34,7 @@ export function MenuEditor({
   onAddItem,
   onUpdateItem,
   onDeleteItem,
+  onDeleteRestaurant,
 }: MenuEditorProps) {
   const current = restaurants.find((r) => r.id === selectedId) ?? restaurants[0] ?? null;
 
@@ -50,6 +52,9 @@ export function MenuEditor({
   /** The menu item awaiting a delete confirmation, if any. */
   const [deleteTarget, setDeleteTarget] = useState<MenuItemView | null>(null);
 
+  /** Whether the restaurant delete confirmation is showing. */
+  const [confirmDeleteRestaurant, setConfirmDeleteRestaurant] = useState(false);
+
   const [error, setError] = useState('');
   const run = async (fn: () => Promise<void> | void, fallback: string) => {
     setError('');
@@ -64,8 +69,17 @@ export function MenuEditor({
 
   const confirmDelete = async () => {
     if (!deleteTarget || !current) return;
-    const ok = await run(() => onDeleteItem(current.id, deleteTarget.id), 'Streichen hat nicht geklappt.');
+    const ok = await run(() => onDeleteItem(current.id, deleteTarget.id), 'Streichen hat not geklappt.');
     if (ok) setDeleteTarget(null);
+  };
+
+  const handleConfirmDeleteRestaurant = async () => {
+    if (!current) return;
+    const ok = await run(
+      () => onDeleteRestaurant(current.id),
+      'Restaurant löschen hat nicht geklappt.',
+    );
+    if (ok) setConfirmDeleteRestaurant(false);
   };
 
   const saveField = (field: 'name' | 'phone', value: string) => {
@@ -142,6 +156,17 @@ export function MenuEditor({
           </div>
 
           <div className="fz-spacer" />
+
+          <div className="fz-row fz-row--between">
+            <span />
+            <button
+              type="button"
+              className="fz-btn fz-btn--dashed"
+              onClick={() => setConfirmDeleteRestaurant(true)}
+            >
+              Restaurant löschen
+            </button>
+          </div>
 
           <div className="fz-row fz-row--double fz-row--between" style={{ paddingRight: 0 }}>
             <h2 className="fz-h2" style={{ fontSize: 40 }}>
@@ -241,6 +266,37 @@ export function MenuEditor({
               </button>
               <button type="button" className="fz-btn" autoFocus onClick={() => void confirmDelete()}>
                 Streichen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteRestaurant && current && (
+        <div
+          className="fz-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="fz-del-restaurant-title"
+          aria-describedby="fz-del-restaurant-desc"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setConfirmDeleteRestaurant(false);
+          }}
+        >
+          <div className="fz-modal__backdrop" onClick={() => setConfirmDeleteRestaurant(false)} />
+          <div className="fz-modal__card">
+            <h2 className="fz-h2" id="fz-del-restaurant-title">
+              Restaurant löschen?
+            </h2>
+            <p className="fz-text" id="fz-del-restaurant-desc">
+              „{current.name ?? 'Ohne Namen'}“ inklusive seiner Speisekarte unwiderruflich löschen?
+            </p>
+            <div className="fz-modal__actions">
+              <button type="button" className="fz-btn" onClick={() => setConfirmDeleteRestaurant(false)}>
+                Abbrechen
+              </button>
+              <button type="button" className="fz-btn" autoFocus onClick={() => void handleConfirmDeleteRestaurant()}>
+                Löschen
               </button>
             </div>
           </div>

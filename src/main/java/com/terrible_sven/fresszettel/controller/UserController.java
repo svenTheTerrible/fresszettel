@@ -31,8 +31,8 @@ public class UserController {
 	private final OrderService orderService;
 
 	@PostMapping("createRestaurant")
-	public void createRestaurant(@AuthenticationPrincipal Long userId, @RequestBody CreateRestaurantRequest request) {
-		restaurantService.createRestaurant(request, userId);
+	public Long createRestaurant(@AuthenticationPrincipal Long userId, @RequestBody CreateRestaurantRequest request) {
+		return restaurantService.createRestaurant(request, userId);
 	}
 
 	@PutMapping("updateRestaurant")

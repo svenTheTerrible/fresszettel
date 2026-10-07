@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MenuEditor } from '../components/MenuEditor';
 import {
   createRestaurant,
+  deleteRestaurant,
   listMenuItems,
   listRestaurants,
   toMenuItemInput,
@@ -75,7 +76,8 @@ export function MenuEditorPage() {
 
   const handleCreateRestaurant = async () => {
     if (!token) return;
-    await createRestaurant({ name: '', menuItems: [] });
+    const id = await createRestaurant({ name: '', menuItems: [] });
+    setSelectedId(id);
     refreshFor(null);
   };
 
@@ -90,8 +92,8 @@ export function MenuEditorPage() {
     const menu = await readMenu(id);
     await updateRestaurant({
       restaurantId: r.id,
-      name: patch.name ?? undefined,
-      phone: patch.phone ?? undefined,
+      name: patch.name ?? r.name ?? undefined,
+      phone: patch.phone ?? r.phone ?? undefined,
       menuItems: menu.map(toMenuItemInput),
     });
     refreshFor(id);
@@ -164,6 +166,13 @@ export function MenuEditorPage() {
     refreshFor(id);
   };
 
+  const handleDeleteRestaurant = async (id: number) => {
+    if (!token) return;
+    await deleteRestaurant(id);
+    setSelectedId(null);
+    refreshFor(null);
+  };
+
   if (isLoading) {
     return (
       <AdminShell active="speisekarte">
@@ -184,6 +193,7 @@ export function MenuEditorPage() {
         onAddItem={handleAddItem}
         onUpdateItem={handleUpdateItem}
         onDeleteItem={handleDeleteItem}
+        onDeleteRestaurant={handleDeleteRestaurant}
       />
       {isError && (
         <div className="fz-row">

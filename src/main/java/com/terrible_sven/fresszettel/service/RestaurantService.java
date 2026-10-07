@@ -28,7 +28,7 @@ public class RestaurantService {
 	private final MenuItemRepository menuItemRepository;
 
 	@Transactional
-	public void createRestaurant(CreateRestaurantRequest request, Long userId) {
+	public Long createRestaurant(CreateRestaurantRequest request, Long userId) {
 		Restaurant restaurant = new Restaurant();
 		restaurant.setName(request.name());
 		restaurant.setPhone(request.phone());
@@ -48,6 +48,7 @@ public class RestaurantService {
 
 			menuItemRepository.save(menuItem);
 		}
+		return restaurant.getId();
 	}
 
 	@Transactional
