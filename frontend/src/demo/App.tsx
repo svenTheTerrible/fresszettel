@@ -1,13 +1,13 @@
-import { BrowserRouter } from 'react-router';
+import { HashRouter } from 'react-router';
 import { Fresszettel } from './Fresszettel.tsx';
 import { AuthProvider } from './AuthProvider';
 
 export function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <Fresszettel />
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

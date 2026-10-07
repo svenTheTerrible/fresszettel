@@ -16,8 +16,9 @@ public class SecurityConfig {
 
 	private final JwtService jwtService;
 
-	public static final String ORDER_PATH = "/order/**";
-	public static final String AUTH_PATH = "/authentification/**";
+	public static final String ORDER_PATH = "/api/order/**";
+	public static final String AUTH_PATH = "/api/authentification/**";
+	public static final String[] STATIC_PATHS = { "/", "/index.html", "/assets/**", "/fonts/**", "/fonts.css" };
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -29,6 +30,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(ORDER_PATH).permitAll()
 						.requestMatchers(AUTH_PATH).permitAll()
+						.requestMatchers(STATIC_PATHS).permitAll()
 						.anyRequest().authenticated())
 				.addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 

@@ -110,10 +110,35 @@
 			<plugin>
 				<groupId>org.graalvm.buildtools</groupId>
 				<artifactId>native-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>com.terrible_sven.fresszettel.FresszettelApplication</mainClass>
+					<metadataRepository>
+						<enabled>true</enabled>
+					</metadataRepository>
+				</configuration>
+				<executions>
+					<execution>
+						<id>add-reachability-metadata</id>
+						<goals>
+							<goal>add-reachability-metadata</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<classifier>exec</classifier>
+				</configuration>
+				<executions>
+					<execution>
+						<id>process-aot</id>
+						<goals>
+							<goal>process-aot</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
