@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Route, Routes, useSearchParams } from 'react-router';
+import { Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router';
 import { createInvitation, listInvitations } from '../lib/invitations';
 import {
   createRestaurant,
@@ -12,7 +12,9 @@ import {
 } from '../lib/restaurants';
 import type { Invitation, NewInvitation, NewMenuItem, Restaurant } from '../types';
 import { useAuth } from './auth-context';
-import { AdminPage } from './AdminPage';
+import { MenuEditorPage } from './MenuEditorPage';
+import { InvitePage } from './InvitePage';
+import { OrdersPage } from './OrdersPage';
 import { OrderSheetPage } from './OrderSheetPage';
 import { LoginPage } from './LoginPage';
 import { RequireAuth } from './RequireAuth';
@@ -29,6 +31,7 @@ import { RequireAuth } from './RequireAuth';
  */
 export function Demo() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -234,12 +237,11 @@ export function Demo() {
       <Route path="/z/:token" element={<OrderSheetPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
-        path="/admin/:tab"
+        path="/admin/speisekarte"
         element={
           <RequireAuth>
-            <AdminPage
+            <MenuEditorPage
               restaurants={restaurants}
-              invitations={invitations}
               selectedId={selectedId}
               onSelect={setSelectedId}
               onCreateRestaurant={handleCreateRestaurant}
@@ -247,8 +249,28 @@ export function Demo() {
               onAddItem={handleAddItem}
               onUpdateItem={handleUpdateItem}
               onDeleteItem={handleDeleteItem}
-                onCreateInvitation={handleCreateInvitation}
-              />
+            />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/einladung"
+        element={
+          <RequireAuth>
+            <InvitePage
+              restaurants={restaurants}
+              invitations={invitations}
+              onCreate={handleCreateInvitation}
+              onOpenOrders={(inv) => navigate(`/admin/bestellungen?zettel=${encodeURIComponent(inv.id)}`)}
+            />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/bestellungen"
+        element={
+          <RequireAuth>
+            <OrdersPage invitations={invitations} restaurants={restaurants} />
           </RequireAuth>
         }
       />
