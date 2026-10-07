@@ -94,6 +94,15 @@ export async function fetchUpdateRestaurant(
   });
 }
 
+/** `DELETE /api/user/deleteRestaurant/{restaurantId}` — delete a restaurant. */
+export async function fetchDeleteRestaurant(
+  restaurantId: number | string,
+): Promise<Response> {
+  return apiFetch(`/api/user/deleteRestaurant/${restaurantId}`, {
+    method: 'DELETE',
+  });
+}
+
 /** Body for `POST /api/user/createInvitation`. */
 export interface CreateInvitationRequest {
   restaurantId: number;

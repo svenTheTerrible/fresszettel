@@ -16,7 +16,7 @@ import { RequireAuth } from './RequireAuth';
  * Restaurants, menus, invitations and orders all come from the backend
  * (`/api/user/...`). MenuEditorPage is self-contained and needs no props.
  */
-export function Demo() {
+export function Fresszettel() {
   return (
     <Routes>
       <Route path="/z/:token" element={<OrderSheetPage />} />

@@ -7,6 +7,7 @@
 
 import {
   fetchCreateRestaurant,
+  fetchDeleteRestaurant,
   fetchListRestaurants,
   fetchMenuItems,
   fetchUpdateRestaurant,
@@ -75,10 +76,12 @@ export async function listMenuItems(
   return (await response.json()) as MenuItemView[];
 }
 
-/** Create a restaurant (empty menu when `menuItems` is empty). */
+/**
+ * Create a restaurant (empty menu when `menuItems` is empty) and return its new id.
+ */
 export async function createRestaurant(
   request: CreateRestaurantRequest,
-): Promise<void> {
+): Promise<number> {
   let response: Response;
   try {
     response = await fetchCreateRestaurant(request);
@@ -86,6 +89,7 @@ export async function createRestaurant(
     throw new Error('Keine Verbindung zum Server.');
   }
   assertOk(response);
+  return (await response.json()) as number;
 }
 
 /** Update a restaurant. Sends the full menu; items without an id are new. */
@@ -95,6 +99,17 @@ export async function updateRestaurant(
   let response: Response;
   try {
     response = await fetchUpdateRestaurant(request);
+  } catch {
+    throw new Error('Keine Verbindung zum Server.');
+  }
+  assertOk(response);
+}
+
+/** Delete a restaurant by id. */
+export async function deleteRestaurant(restaurantId: number): Promise<void> {
+  let response: Response;
+  try {
+    response = await fetchDeleteRestaurant(restaurantId);
   } catch {
     throw new Error('Keine Verbindung zum Server.');
   }

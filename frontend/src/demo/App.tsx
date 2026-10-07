@@ -1,12 +1,12 @@
 import { BrowserRouter } from 'react-router';
-import { Demo } from './Demo';
+import { Fresszettel } from './Fresszettel.tsx';
 import { AuthProvider } from './AuthProvider';
 
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Demo />
+        <Fresszettel />
       </AuthProvider>
     </BrowserRouter>
   );
