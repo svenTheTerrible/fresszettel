@@ -110,7 +110,13 @@ function refreshAccessToken(): Promise<string | null> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken }),
         });
-        if (!response.ok) return null;
+         if (!response.ok) {
+           // The backend rejected the refresh: the session is dead. Drop both
+           // tokens and send the user back to the login page.
+           clearStoredTokens();
+           window.location.assign('/login');
+           return null;
+         }
         const text = await response.text();
         if (!text) return null;
         const data = (JSON.parse(text) ?? {}) as RefreshResponse;
