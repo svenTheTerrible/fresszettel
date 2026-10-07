@@ -1,0 +1,6 @@
+.git
+.idea
+db/*.db
+target
+frontend/node_modules
+frontend/dist
