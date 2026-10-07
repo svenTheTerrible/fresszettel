@@ -18,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("authentification")
+@RequestMapping("api/authentification")
 @RequiredArgsConstructor
 public class AuthController {
 
