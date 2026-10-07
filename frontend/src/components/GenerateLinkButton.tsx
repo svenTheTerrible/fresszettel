@@ -28,7 +28,7 @@ export function LinkSlip({ invitation }: LinkSlipProps) {
 
   useEffect(() => () => window.clearTimeout(copyTimer.current), []);
 
-  const shareUrl = `${window.location.origin}/z/${invitation.token ?? ''}`;
+  const shareUrl = `${window.location.origin}/#/z/${invitation.token ?? ''}`;
 
   const handleCopy = async () => {
     try {
