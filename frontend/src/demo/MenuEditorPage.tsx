@@ -5,14 +5,12 @@ import {
   createRestaurant,
   listMenuItems,
   listRestaurants,
-  toMenuItem,
   toMenuItemInput,
-  toRestaurant,
   updateRestaurant,
 } from '../lib/restaurants';
-import type { MenuItemView } from '../lib/restaurants';
+import type { MenuItemView, RestaurantSummary } from '../lib/restaurants';
 import { useRestaurants } from '../hooks/useRestaurants';
-import type { MenuItem, NewMenuItem, Restaurant } from '../types';
+import type { NewMenuItem } from '../types';
 import { AdminShell } from './AdminShell';
 import { useAuth } from './auth-context';
 
@@ -31,28 +29,20 @@ export function MenuEditorPage() {
     error,
   } = useRestaurants();
 
-  const [selectedIdRaw, setSelectedIdRaw] = useState<string | null>(null);
-  const selectedId = selectedIdRaw ?? base[0]?.id ?? null;
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const selected = selectedId ?? base[0]?.id ?? null;
 
   // One query per selected restaurant, cached by react-query.
   const { data: menu } = useQuery({
-    queryKey: ['restaurant-menu', token, selectedId],
-    queryFn: () =>
-      (selectedId
-        ? listMenuItems(selectedId)
-        : Promise.resolve<MenuItemView[]>([])).then((items) =>
-        items.map(toMenuItem),
-      ),
-    enabled: Boolean(token && selectedId),
+    queryKey: ['restaurant-menu', token, selected],
+    queryFn: () => listMenuItems(selected),
+    enabled: Boolean(token && selected),
   });
 
   const menuForSelected = menu ?? [];
-  const restaurants = base.map((r) =>
-    r.id === selectedId ? { ...r, menu: menuForSelected } : r,
-  );
 
   /** Drop the menu editor's react-query cache for the affected keys. */
-  const refreshFor = (restaurantId: string | null) => {
+  const refreshFor = (restaurantId: number | null) => {
     void queryClient.invalidateQueries({ queryKey: ['restaurants', token] });
     if (restaurantId) {
       void queryClient.invalidateQueries({
@@ -66,21 +56,21 @@ export function MenuEditorPage() {
    * entry was dropped. Feeds the full-menu `updateRestaurant` request, so it
    * must resolve to what's currently on disk rather than an empty list.
    */
-  const readMenu = async (restaurantId: string): Promise<MenuItem[]> => {
-    const cached = queryClient.getQueryData<MenuItem[]>(
+  const readMenu = async (restaurantId: number): Promise<MenuItemView[]> => {
+    const cached = queryClient.getQueryData<MenuItemView[]>(
       ['restaurant-menu', token, restaurantId],
     );
     if (cached) return cached;
-    const items = await listMenuItems(restaurantId);
-    return items.map(toMenuItem);
+    return listMenuItems(restaurantId);
   };
 
   /** The user's restaurants from the react-query cache, fetching if cold. */
-  const readRestaurants = async (): Promise<Restaurant[]> => {
-    const cached = queryClient.getQueryData<Restaurant[]>(['restaurants', token]);
+  const readRestaurants = async (): Promise<RestaurantSummary[]> => {
+    const cached = queryClient.getQueryData<RestaurantSummary[]>(
+      ['restaurants', token],
+    );
     if (cached) return cached;
-    const list = await listRestaurants();
-    return list.map(toRestaurant);
+    return listRestaurants();
   };
 
   const handleCreateRestaurant = async () => {
@@ -90,7 +80,7 @@ export function MenuEditorPage() {
   };
 
   const handleUpdateRestaurant = async (
-    id: string,
+    id: number,
     patch: { name?: string; phone?: string },
   ) => {
     if (!token) return;
@@ -99,31 +89,31 @@ export function MenuEditorPage() {
     if (!r) return;
     const menu = await readMenu(id);
     await updateRestaurant({
-      restaurantId: Number(id),
-      name: patch.name ?? r.name,
-      phone: patch.phone ?? r.phone,
+      restaurantId: r.id,
+      name: patch.name ?? undefined,
+      phone: patch.phone ?? undefined,
       menuItems: menu.map(toMenuItemInput),
     });
     refreshFor(id);
   };
 
-  const handleAddItem = async (id: string, item: NewMenuItem) => {
+  const handleAddItem = async (id: number, item: NewMenuItem) => {
     if (!token) return;
     const restaurants = await readRestaurants();
     const r = restaurants.find((x) => x.id === id);
     if (!r) return;
     const menu = await readMenu(id);
     await updateRestaurant({
-      restaurantId: Number(id),
-      name: r.name,
-      phone: r.phone,
+      restaurantId: r.id,
+      name: r.name ?? undefined,
+      phone: r.phone ?? undefined,
       menuItems: [
         ...menu.map(toMenuItemInput),
         {
-          orderNumber: item.number,
+          orderNumber: item.orderNumber,
           name: item.name,
           description: item.description,
-          price: item.priceCents / 100,
+          price: item.price,
         },
       ],
     });
@@ -131,8 +121,8 @@ export function MenuEditorPage() {
   };
 
   const handleUpdateItem = async (
-    id: string,
-    itemId: string,
+    id: number,
+    itemId: number,
     item: NewMenuItem,
   ) => {
     if (!token) return;
@@ -141,17 +131,17 @@ export function MenuEditorPage() {
     if (!r) return;
     const menu = await readMenu(id);
     await updateRestaurant({
-      restaurantId: Number(id),
-      name: r.name,
-      phone: r.phone,
+      restaurantId: r.id,
+      name: r.name ?? undefined,
+      phone: r.phone ?? undefined,
       menuItems: menu.map((m) =>
         m.id === itemId
           ? {
-              id: Number(itemId),
-              orderNumber: item.number,
+              id: m.id,
+              orderNumber: item.orderNumber,
               name: item.name,
               description: item.description,
-              price: item.priceCents / 100,
+              price: item.price,
             }
           : toMenuItemInput(m),
       ),
@@ -159,16 +149,16 @@ export function MenuEditorPage() {
     refreshFor(id);
   };
 
-  const handleDeleteItem = async (id: string, itemId: string) => {
+  const handleDeleteItem = async (id: number, itemId: number) => {
     if (!token) return;
     const restaurants = await readRestaurants();
     const r = restaurants.find((x) => x.id === id);
     if (!r) return;
     const menu = await readMenu(id);
     await updateRestaurant({
-      restaurantId: Number(id),
-      name: r.name,
-      phone: r.phone,
+      restaurantId: r.id,
+      name: r.name ?? undefined,
+      phone: r.phone ?? undefined,
       menuItems: menu.filter((m) => m.id !== itemId).map(toMenuItemInput),
     });
     refreshFor(id);
@@ -185,9 +175,10 @@ export function MenuEditorPage() {
   return (
     <AdminShell active="speisekarte">
       <MenuEditor
-        restaurants={restaurants}
-        selectedId={selectedId}
-        onSelect={setSelectedIdRaw}
+        restaurants={base}
+        menu={menuForSelected}
+        selectedId={selected}
+        onSelect={setSelectedId}
         onCreateRestaurant={handleCreateRestaurant}
         onUpdateRestaurant={handleUpdateRestaurant}
         onAddItem={handleAddItem}

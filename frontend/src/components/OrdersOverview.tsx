@@ -1,97 +1,99 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { Invitation, Order, Restaurant } from '../types';
-import { listOrders, setOrderPaid } from '../lib/orders';
+import { useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { compareOrderNumbers, formatEuro, formatShortDate, formatTime, formatWindow } from '../lib/format';
+import { getOrdersView, setOrderPaid } from '../lib/orders';
 import { useCountdown } from '../hooks/useCountdown';
 import { LinkSlip } from './GenerateLinkButton';
 
 export interface OrdersOverviewProps {
-  invitation: Invitation;
-  /** The invitation's restaurant, used to look up dish names and prices. */
-  restaurant: Restaurant;
+  /** The Zettel (order batch) id to load everything for. */
+  zettelId: string;
 }
 
 /** Admin: incoming orders, the list to read out on the phone, and the total to pay. */
-export function OrdersOverview({ invitation, restaurant }: OrdersOverviewProps) {
-  const countdown = useCountdown(invitation.validUntil);
+export function OrdersOverview({ zettelId }: OrdersOverviewProps) {
+  const queryClient = useQueryClient();
   const [showLink, setShowLink] = useState(false);
-  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Load this Zettel's orders whenever the Zettel changes.
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const list = await listOrders(invitation.id);
-        if (!cancelled) setOrders(list);
-      } catch {
-        // Backend unreachable — leave the list empty.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [invitation.id]);
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['orders-view', zettelId],
+    queryFn: () => getOrdersView(zettelId),
+  });
 
-  /** Persist a checkbox toggle to the backend, then mirror it into local state. */
-  const handleTogglePaid = async (orderId: string, paid: boolean) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-    try {
-      await setOrderPaid(order.invitationId, order.name, paid);
-    } catch {
-      return;
+  const countdown = useCountdown(data?.validUntil ?? '');
+
+  const { people, aggregate, totalEuro, paidEuro } = useMemo(() => {
+    if (!data) {
+      return { people: [], aggregate: [], totalEuro: 0, paidEuro: 0 };
     }
-    setOrders((os) => os.map((o) => (o.id === orderId ? { ...o, paid } : o)));
-  };
 
-  const { people, aggregate, totalCents, paidCents } = useMemo(() => {
-    const byId = new Map(restaurant.menu.map((m) => [m.id, m]));
-    const agg = new Map<string, { number: string; name: string; quantity: number; cents: number }>();
+    const byId = new Map(data.menu.map((m) => [m.id, m]));
+    const agg = new Map<number, { number: string; name: string; quantity: number; euro: number }>();
     let total = 0;
     let paid = 0;
 
-    const people = orders.map((o) => {
+    const people = data.orders.map((order) => {
       let sum = 0;
       const parts: string[] = [];
-      for (const line of o.lines) {
+      for (const line of order.lines) {
         const item = byId.get(line.menuItemId);
-        const price = item?.priceCents ?? 0;
+        const price = item?.price ?? 0;
         sum += price * line.quantity;
-        parts.push(`${line.quantity}× Nr. ${item?.number ?? '?'}`);
+        parts.push(`${line.quantity}× Nr. ${item?.orderNumber ?? '?'}`);
         const key = line.menuItemId;
-        const prev = agg.get(key) ?? { number: item?.number ?? '?', name: item?.name ?? 'Unbekanntes Gericht', quantity: 0, cents: 0 };
-        agg.set(key, { ...prev, quantity: prev.quantity + line.quantity, cents: prev.cents + price * line.quantity });
+        const prev = agg.get(key) ?? { number: item?.orderNumber ?? '?', name: item?.name ?? 'Unbekantes Gericht', quantity: 0, euro: 0 };
+        agg.set(key, { ...prev, quantity: prev.quantity + line.quantity, euro: prev.euro + price * line.quantity });
       }
       total += sum;
-      if (o.paid) paid += sum;
-      return { id: o.id, name: o.name, items: parts.join(', '), sumCents: sum, paid: Boolean(o.paid) };
+      if (order.paid) paid += sum;
+      return { id: order.name, name: order.name, items: parts.join(', '), sumEuro: sum, paid: order.paid };
     });
 
     return {
       people,
       aggregate: [...agg.values()].sort((a, b) => compareOrderNumbers(a.number, b.number)),
-      totalCents: total,
-      paidCents: paid,
+      totalEuro: total,
+      paidEuro: paid,
     };
-  }, [orders, restaurant.menu]);
+  }, [data]);
+
+  if (isLoading) {
+    return <p style={{ padding: 24 }}>Wird geladen …</p>;
+  }
+  if (isError) {
+    return <p style={{ padding: 24 }}>{error?.message ?? 'Das hat nicht geklappt. Versuch es nochmal.'}</p>;
+  }
+  if (!data) {
+    return <p style={{ padding: 24 }}>Dieser Zettel gibt es nicht.</p>;
+  }
+
+  const { orders } = data;
+
+  const handleTogglePaid = async (name: string, paid: boolean) => {
+    try {
+      await setOrderPaid(zettelId, name, paid);
+    } catch {
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['orders-view', zettelId] });
+  };
 
   const countText = orders.length === 1 ? '1 Zettel eingegangen' : `${orders.length} Zettel eingegangen`;
 
   return (
     <>
       <div className="fz-row fz-row--double fz-row--between" style={{ flexWrap: 'wrap', paddingRight: 0 }}>
-        <h1 className="fz-h1">{restaurant.name}</h1>
+        <h1 className="fz-h1">{data.restaurantName}</h1>
         {countdown.expired ? (
           <div className="fz-circled">geschlossen</div>
         ) : (
-          <div className="fz-circled fz-circled--green">läuft noch bis {formatTime(invitation.validUntil)}</div>
+          <div className="fz-circled fz-circled--green">läuft noch bis {formatTime(data.validUntil)}</div>
         )}
       </div>
       <div className="fz-row fz-row--grow">
         <span className="fz-small fz-muted">
-          {formatShortDate(invitation.validFrom)} · {formatWindow(invitation.validFrom, invitation.validUntil)} Uhr · {countText}
-          {restaurant.phone ? ` · Tel. ${restaurant.phone}` : ''}
+          {formatShortDate(data.validFrom)} · {formatWindow(data.validFrom, data.validUntil)} Uhr · {countText}
+          {data.phone ? ` · Tel. ${data.phone}` : ''}
         </span>
       </div>
 
@@ -119,13 +121,13 @@ export function OrdersOverview({ invitation, restaurant }: OrdersOverviewProps) 
                 {a.name}
               </span>
               <span className="fz-right fz-nowrap" style={{ fontSize: 19, lineHeight: '30px' }}>
-                {formatEuro(a.cents)}
+                {formatEuro(a.euro)}
               </span>
             </div>
           ))}
           <div className="fz-row fz-row--double fz-row--between" style={{ paddingLeft: 0, paddingRight: 0 }}>
             <span className="fz-text">Gesamtbetrag</span>
-            <span className="fz-total fz-total--big">{formatEuro(totalCents)}</span>
+            <span className="fz-total fz-total--big">{formatEuro(totalEuro)}</span>
           </div>
         </section>
 
@@ -144,14 +146,14 @@ export function OrdersOverview({ invitation, restaurant }: OrdersOverviewProps) 
                 {p.items}
               </span>
               <span className="fz-right fz-nowrap" style={{ fontSize: 19, lineHeight: '30px' }}>
-                {formatEuro(p.sumCents)}
+                {formatEuro(p.sumEuro)}
               </span>
               <label className="fz-checkbox">
                 <input
                   type="checkbox"
                   checked={p.paid}
                   aria-label={`${p.name} hat bezahlt`}
-                  onChange={() => void handleTogglePaid(p.id, !p.paid)}
+                  onChange={() => void handleTogglePaid(p.name, !p.paid)}
                 />
               </label>
             </div>
@@ -159,13 +161,13 @@ export function OrdersOverview({ invitation, restaurant }: OrdersOverviewProps) 
           <div className="fz-grid fz-grid--sum fz-muted" style={{ fontSize: 16, lineHeight: '30px' }}>
             <span>schon bezahlt</span>
             <span className="fz-right" style={{ paddingRight: 56 }}>
-              {formatEuro(paidCents)}
+              {formatEuro(paidEuro)}
             </span>
           </div>
           <div className="fz-grid fz-grid--sum" style={{ fontSize: 19, lineHeight: '30px' }}>
             <span>noch offen</span>
             <span className="fz-right" style={{ paddingRight: 56, fontWeight: 700, color: 'var(--fz-red)' }}>
-              {formatEuro(totalCents - paidCents)}
+              {formatEuro(totalEuro - paidEuro)}
             </span>
           </div>
         </section>
@@ -183,7 +185,7 @@ export function OrdersOverview({ invitation, restaurant }: OrdersOverviewProps) 
         </button>
       </div>
 
-      {showLink && <LinkSlip invitation={invitation} />}
+       {showLink && <LinkSlip invitation={data} />}
     </>
   );
 }

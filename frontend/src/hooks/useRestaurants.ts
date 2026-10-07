@@ -1,11 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Restaurant } from '../types';
-import { listRestaurants, toRestaurant } from '../lib/restaurants';
+import type { RestaurantSummary } from '../lib/restaurants';
+import { listRestaurants } from '../lib/restaurants';
 import { useAuth } from '../demo/auth-context';
 
 export interface UseRestaurantsResult {
-  /** The logged-in user's restaurants, mapped onto the shared shape. */
-  restaurants: Restaurant[];
+  /** The logged-in user's restaurants, exactly as returned by the backend. */
+  restaurants: RestaurantSummary[];
   /** True while the first fetch is in flight. */
   isLoading: boolean;
   /** True when the backend call failed. */
@@ -27,7 +27,7 @@ export function useRestaurants(): UseRestaurantsResult {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['restaurants', token],
-    queryFn: () => listRestaurants().then((list) => list.map(toRestaurant)),
+    queryFn: listRestaurants,
     enabled: Boolean(token),
   });
 

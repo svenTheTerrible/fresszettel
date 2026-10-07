@@ -1,54 +1,10 @@
 /**
- * Shared data shapes. Money is always in euro CENTS (integers) to avoid
- * floating-point rounding. Map your backend DTOs onto these in your API layer.
+ * Data shapes that originate in the frontend (client inputs, order drafts).
+ * Data coming back from the backend uses the backend's own DTO types, defined
+ * in the lib layer (e.g. `RestaurantSummary`, `MenuItemView`, `InvitationView`,
+ * `OrderMenuView`, `OrdersView`), so no response is remapped into a shape here.
+ * Backend prices are in euro, ids are numbers.
  */
-
-export interface MenuItem {
-  id: string;
-  /** The restaurant's own order number, e.g. "12". Shown in the paper margin. */
-  number: string;
-  name: string;
-  description?: string;
-  priceCents: number;
-}
-
-export interface Restaurant {
-  id: string;
-  name: string;
-  phone?: string;
-  menu: MenuItem[];
-}
-
-export interface Invitation {
-  id: string;
-  /** Full link that gets sent to the users. */
-  url: string;
-  restaurantId: string;
-  restaurantName: string;
-  /** ISO 8601 timestamps. */
-  validFrom: string;
-  validUntil: string;
-  /** Optional aggregates for the history list. */
-  orderCount?: number;
-  /** Total amount in euro (e.g. 42.5), as passed by the backend. */
-  total?: number;
-}
-
-export interface OrderLine {
-  menuItemId: string;
-  quantity: number;
-}
-
-export interface Order {
-  id: string;
-  invitationId: string;
-  /** Name typed in by the (account-less) user. */
-  name: string;
-  lines: OrderLine[];
-  /** Only used if your backend tracks who has paid. */
-  paid?: boolean;
-  createdAt?: string;
-}
 
 /** What the order sheet hands to your backend. */
 export interface OrderDraft {
@@ -56,15 +12,21 @@ export interface OrderDraft {
   lines: OrderLine[];
 }
 
+export interface OrderLine {
+  menuItemId: number;
+  quantity: number;
+}
+
 export interface NewMenuItem {
-  number: string;
+  orderNumber: string;
   name: string;
   description?: string;
-  priceCents: number;
+  /** Price in euro, e.g. 8.5. */
+  price: number;
 }
 
 export interface NewInvitation {
-  restaurantId: string;
+  restaurantId: number;
   validFrom: Date;
   validUntil: Date;
 }

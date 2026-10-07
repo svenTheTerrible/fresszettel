@@ -1,16 +1,16 @@
 /**
  * Thin invitation layer for the demo app. Talks to the backend's
- * `POST/GET /api/user/...Invitation` endpoints (order batches), maps the DTOs
- * onto the shared types, and throws Errors with user-facing messages on failure
- * (like restaurants.ts).
+ * `POST/GET /api/user/...Invitation` endpoints and returns the DTOs exactly as
+ * serialized (the shapes in this file match the backend records), and throws
+ * Errors with user-facing messages on failure (like restaurants.ts).
  */
 
-import type { Invitation, NewInvitation } from '../types';
 import {
   fetchCreateInvitation,
   fetchListInvitations,
   type CreateInvitationRequest,
 } from './api';
+import type { NewInvitation } from '../types';
 
 /**
  * One element of the invitation endpoints, exactly as serialized by the
@@ -33,24 +33,6 @@ function assertOk(response: Response): void {
   }
 }
 
-/**
- * Map a backend view onto the shared shape. The shareable link is rebuilt from
- * the batch token (the `/z/<token>` route); backend `null`s become empty or
- * `undefined`.
- */
-export function toInvitation(view: InvitationView): Invitation {
-  return {
-    id: String(view.id),
-    url: `${location.origin}/z/${view.token ?? ''}`,
-    restaurantId: String(view.restaurantId ?? ''),
-    restaurantName: view.restaurantName ?? '',
-    validFrom: view.validFrom ?? '',
-    validUntil: view.validUntil ?? '',
-    orderCount: view.orderCount ?? undefined,
-    total: view.total ?? undefined,
-  };
-}
-
 /** Format a Date as an ISO local date-time (no offset), matching the backend. */
 function toLocalIso(date: Date): string {
   const y = date.getFullYear();
@@ -63,7 +45,7 @@ function toLocalIso(date: Date): string {
 }
 
 /** List the logged-in user's invitations, newest first. */
-export async function listInvitations(): Promise<Invitation[]> {
+export async function listInvitations(): Promise<InvitationView[]> {
   let response: Response;
   try {
     response = await fetchListInvitations();
@@ -71,14 +53,13 @@ export async function listInvitations(): Promise<Invitation[]> {
     throw new Error('Keine Verbindung zum Server.');
   }
   assertOk(response);
-  const views = (await response.json()) as InvitationView[];
-  return views.map(toInvitation);
+  return (await response.json()) as InvitationView[];
 }
 
-/** Create an invitation in the backend and return it (with its final URL). */
-export async function createInvitation(input: NewInvitation): Promise<Invitation> {
+/** Create an invitation in the backend and return it (with its batch token). */
+export async function createInvitation(input: NewInvitation): Promise<InvitationView> {
   const request: CreateInvitationRequest = {
-    restaurantId: Number(input.restaurantId),
+    restaurantId: input.restaurantId,
     validFrom: toLocalIso(input.validFrom),
     validUntil: toLocalIso(input.validUntil),
   };
@@ -89,6 +70,5 @@ export async function createInvitation(input: NewInvitation): Promise<Invitation
     throw new Error('Keine Verbindung zum Server.');
   }
   assertOk(response);
-  const view = (await response.json()) as InvitationView;
-  return toInvitation(view);
+  return (await response.json()) as InvitationView;
 }

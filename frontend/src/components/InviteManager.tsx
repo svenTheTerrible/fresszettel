@@ -1,23 +1,24 @@
-import type { Invitation, NewInvitation, Restaurant } from '../types';
+import type { NewInvitation } from '../types';
+import type { InvitationView } from '../lib/invitations';
+import type { RestaurantSummary } from '../lib/restaurants';
 import { formatEuro, formatShortDate, formatWindow } from '../lib/format';
 import { NewInvitationForm } from './NewInvitationForm';
 
 export interface InviteManagerProps {
-  restaurants: Pick<Restaurant, 'id' | 'name'>[];
+  restaurants: Pick<RestaurantSummary, 'id' | 'name'>[];
   /** Earlier invitations, newest first. */
-  invitations: Invitation[];
-  /** Create the invitation in your backend and return it (with its final URL). */
-  onCreate: (input: NewInvitation) => Promise<Invitation>;
+  invitations: InvitationView[];
+  /** Create the invitation in your backend and return it (with its final link). */
+  onCreate: (input: NewInvitation) => Promise<InvitationView>;
   /** "läuft · ansehen" link target for running invitations. */
-  ordersHref?: (invitation: Invitation) => string;
-  onOpenOrders?: (invitation: Invitation) => void;
-  defaultUntil?: string;
+  ordersHref?: (invitation: InvitationView) => string;
+  onOpenOrders?: (invitation: InvitationView) => void;
 }
 
 type Status = 'geplant' | 'läuft' | 'abgelaufen';
-const statusOf = (inv: Invitation, now: number): Status => {
-  if (now < new Date(inv.validFrom).getTime()) return 'geplant';
-  if (now < new Date(inv.validUntil).getTime()) return 'läuft';
+const statusOf = (inv: InvitationView, now: number): Status => {
+  if (now < new Date(inv.validFrom ?? '').getTime()) return 'geplant';
+  if (now < new Date(inv.validUntil ?? '').getTime()) return 'läuft';
   return 'abgelaufen';
 };
 
@@ -26,9 +27,8 @@ export function InviteManager({
   restaurants,
   invitations,
   onCreate,
-  ordersHref = (inv) => `#/admin/bestellungen?zettel=${encodeURIComponent(inv.id)}`,
+   ordersHref = (inv) => `#/admin/bestellungen/${inv.id}`,
   onOpenOrders,
-  defaultUntil,
 }: InviteManagerProps) {
   const now = Date.now();
 
@@ -38,7 +38,7 @@ export function InviteManager({
         <h1 className="fz-h1">Neuen Zettel rumgehen lassen</h1>
       </div>
 
-      <NewInvitationForm restaurants={restaurants} onCreate={onCreate} defaultUntil={defaultUntil} />
+      <NewInvitationForm restaurants={restaurants} onCreate={onCreate} />
 
       <div className="fz-row fz-row--double">
         <h2 className="fz-h2">Frühere Zettel</h2>
@@ -69,7 +69,7 @@ export function InviteManager({
                   <td className="fz-ellipsis">{inv.restaurantName}</td>
                   <td className="fz-hide-sm">{formatWindow(inv.validFrom, inv.validUntil)}</td>
                   <td className="fz-hide-sm fz-right">{inv.orderCount ?? '–'}</td>
-                  <td className="fz-right fz-nowrap">{inv.total != null ? formatEuro(Math.round(inv.total * 100)) : '–'}</td>
+                  <td className="fz-right fz-nowrap">{inv.total != null ? formatEuro(inv.total) : '–'}</td>
                   <td>
                     <a
                       href={ordersHref(inv)}

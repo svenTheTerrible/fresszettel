@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
-import type { Invitation, NewInvitation, Restaurant } from '../types';
+import type { NewInvitation } from '../types';
+import type { InvitationView } from '../lib/invitations';
+import type { RestaurantSummary } from '../lib/restaurants';
 import { combineDateAndTime, toDateInputValue } from '../lib/format';
 import { GenerateLinkButton, type InvitationDraftResult } from './GenerateLinkButton';
 
 export interface NewInvitationFormProps {
-  restaurants: Pick<Restaurant, 'id' | 'name'>[];
+  restaurants: Pick<RestaurantSummary, 'id' | 'name'>[];
   /** Create the invitation in your backend and return it (with its final URL). */
-  onCreate: (input: NewInvitation) => Promise<Invitation>;
-  defaultUntil?: string;
+  onCreate: (input: NewInvitation) => Promise<InvitationView>;
 }
 
 /** Pick a restaurant + time window, then generate the order link. */
-export function NewInvitationForm({ restaurants, onCreate, defaultUntil = '12:15' }: NewInvitationFormProps) {
-  const [restaurantId, setRestaurantId] = useState(restaurants[0]?.id ?? '');
+export function NewInvitationForm({ restaurants, onCreate }: NewInvitationFormProps) {
+  const [restaurantId, setRestaurantId] = useState<number | ''>(restaurants[0]?.id ?? '');
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
-  const [until, setUntil] = useState(defaultUntil);
+  const [until, setUntil] = useState('12:15');
 
   useEffect(() => {
     if (!restaurants.some((r) => r.id === restaurantId)) setRestaurantId(restaurants[0]?.id ?? '');
@@ -35,12 +36,12 @@ export function NewInvitationForm({ restaurants, onCreate, defaultUntil = '12:15
       <div className="fz-row fz-row--grow fz-row--wrap">
         <label className="fz-field">
           Restaurant
-          <select className="fz-input fz-input--hand" value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)}>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
+           <select className="fz-input fz-input--hand" value={restaurantId} onChange={(e) => setRestaurantId(Number(e.target.value))}>
+             {restaurants.map((r) => (
+               <option key={r.id} value={r.id}>
+                 {r.name ?? ''}
+               </option>
+             ))}
           </select>
         </label>
       </div>

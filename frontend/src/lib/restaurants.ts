@@ -1,11 +1,10 @@
 /**
  * Thin restaurant/menu layer for the demo app. Talks to the backend's
- * `GET/POST/PUT /api/user/...` endpoints, maps the DTOs onto the shared
- * types, and throws Errors with user-facing messages on failure (like
- * auth.ts).
+ * `GET/POST/PUT /api/user/...` endpoints and returns the DTOs exactly as
+ * serialized (the shapes in this file match the backend records), and throws
+ * Errors with user-facing messages on failure (like auth.ts).
  */
 
-import type { MenuItem, Restaurant } from '../types';
 import {
   fetchCreateRestaurant,
   fetchListRestaurants,
@@ -20,6 +19,8 @@ import {
  * One element of `GET /api/user/listRestaurants`, exactly as serialized by the
  * backend. Every reference field may be `null` (a `null` DB column serializes to
  * JSON `null`); only `itemCount` is a primitive and therefore never `null`.
+ * The restaurant list has no menu; a selected restaurant's menu is fetched
+ * separately via `listMenuItems`.
  */
 export interface RestaurantSummary {
   id: number;
@@ -101,39 +102,15 @@ export async function updateRestaurant(
 }
 
 /**
- * Map a backend summary onto the shared restaurant shape (menu loaded separately).
- * Backend `null`s are normalized away: optional fields become `undefined`.
+ * Map a backend menu item view onto the backend input for `createRestaurant` /
+ * `updateRestaurant`. Backend `null`s are normalized away; price stays in euro.
  */
-export function toRestaurant(summary: RestaurantSummary): Restaurant {
+export function toMenuItemInput(item: MenuItemView): MenuItemInput {
   return {
-    id: String(summary.id),
-    name: summary.name ?? '',
-    phone: summary.phone ?? undefined,
-    menu: [],
-  };
-}
-
-/**
- * Map a backend menu item view onto the shared shape (price in cents).
- * Backend `null`s are normalized away: optional fields become `undefined`.
- */
-export function toMenuItem(view: MenuItemView): MenuItem {
-  return {
-    id: String(view.id),
-    number: view.orderNumber ?? '',
-    name: view.name ?? '',
-    description: view.description ?? undefined,
-    priceCents: Math.round((view.price ?? 0) * 100),
-  };
-}
-
-/** Map a shared menu item onto the backend input (price in euro). */
-export function toMenuItemInput(item: MenuItem): MenuItemInput {
-  return {
-    id: Number(item.id),
-    orderNumber: item.number,
-    name: item.name,
-    description: item.description,
-    price: item.priceCents / 100,
+    id: item.id,
+    orderNumber: item.orderNumber ?? '',
+    name: item.name ?? '',
+    description: item.description ?? undefined,
+    price: item.price ?? 0,
   };
 }

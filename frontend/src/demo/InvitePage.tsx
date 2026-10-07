@@ -1,44 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { InviteManager } from '../components/InviteManager';
 import { createInvitation, listInvitations } from '../lib/invitations';
-import type { Invitation, NewInvitation } from '../types';
+import type { InvitationView } from '../lib/invitations';
+import type { NewInvitation } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
 import { AdminShell } from './AdminShell';
 
-const ordersHref = (invitation: Invitation) =>
-  `/admin/bestellungen?zettel=${encodeURIComponent(invitation.id)}`;
+const ordersHref = (invitation: InvitationView) => `/admin/bestellungen/${invitation.id}`;
 
 export function InvitePage() {
   const navigate = useNavigate();
   const { restaurants } = useRestaurants();
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const queryClient = useQueryClient();
 
-  // Load the user's invitations (order batches).
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const list = await listInvitations();
-        if (cancelled) return;
-        setInvitations(list);
-      } catch {
-        // Backend unreachable — leave the list empty.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Load the user's invitations (order batches) via react-query.
+  const { data: invitations = [] } = useQuery({
+    queryKey: ['invitations'],
+    queryFn: listInvitations,
+  });
 
   const handleCreate = async (input: NewInvitation) => {
     const created = await createInvitation(input);
-    setInvitations((is) => [created, ...is]);
+    queryClient.invalidateQueries({ queryKey: ['invitations'] });
     return created;
   };
 
-  const onOpenOrders = (invitation: Invitation) =>
-    navigate(`/admin/bestellungen?zettel=${encodeURIComponent(invitation.id)}`);
+  const onOpenOrders = (invitation: InvitationView) =>
+    navigate(`/admin/bestellungen/${invitation.id}`);
 
   return (
     <AdminShell active="einladung">

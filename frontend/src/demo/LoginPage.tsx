@@ -1,27 +1,22 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation } from 'react-router';
+import { Navigate } from 'react-router';
 import { useAuth } from './auth-context';
+import { useSubmitState } from '../hooks/useSubmitState';
 
 type Mode = 'login' | 'register';
 
 /** Sign-in screen. The admin area is only reachable once this succeeds. */
 export function LoginPage() {
   const { token, login, register } = useAuth();
-  const location = useLocation();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, setBusy, error, setError } = useSubmitState();
   const [success, setSuccess] = useState<string | null>(null);
-
-  // If RequireAuth bounced us here, send the user back to the tab they wanted.
-  const from = (location.state as { from?: string } | null)?.from;
-  const target = from ?? '/admin/speisekarte';
 
   // Already signed in? Straight to the admin area.
   if (token) {
-    return <Navigate to={target} replace />;
+    return <Navigate to='/admin/speisekarte' replace />;
   }
 
   const isLogin = mode === 'login';

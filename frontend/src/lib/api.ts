@@ -119,9 +119,9 @@ export async function fetchListInvitations(): Promise<Response> {
   return apiFetch('/api/user/listInvitations');
 }
 
-/** `GET /api/user/orders/{orderBatchId}` — the logged-in user's orders for one batch. */
-export async function fetchOrders(orderBatchId: number | string): Promise<Response> {
-  return apiFetch(`/api/user/orders/${orderBatchId}`);
+/** `GET /api/user/orders/view/{zettelId}` — everything the orders screen needs for one batch: invitation, restaurant menu and grouped orders. */
+export async function fetchOrdersView(zettelId: number | string): Promise<Response> {
+  return apiFetch(`/api/user/orders/view/${zettelId}`);
 }
 
 /** Body for `PUT /api/user/orders/{orderBatchId}/pay`. */

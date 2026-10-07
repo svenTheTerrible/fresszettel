@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
-import type { MenuItem, NewMenuItem, Restaurant } from '../types';
+import type { NewMenuItem } from '../types';
 import { compareOrderNumbers, formatEuro } from '../lib/format';
+import type { MenuItemView, RestaurantSummary } from '../lib/restaurants';
 import { CrossIcon, PencilIcon } from './Icons';
 import { MenuItemForm } from './MenuItemForm';
 
 export interface MenuEditorProps {
-  restaurants: Restaurant[];
-  selectedId: string | null;
-  onSelect: (restaurantId: string) => void;
+  restaurants: RestaurantSummary[];
+  /** Menu of the selected restaurant, fetched separately by the page. */
+  menu: MenuItemView[];
+  selectedId: number | null;
+  onSelect: (restaurantId: number) => void;
   /** Create an empty restaurant; select it afterwards via onSelect. */
   onCreateRestaurant: () => Promise<void> | void;
   /** Saved when a name/phone field loses focus. */
-  onUpdateRestaurant: (restaurantId: string, patch: { name?: string; phone?: string }) => Promise<void> | void;
-  onAddItem: (restaurantId: string, item: NewMenuItem) => Promise<void> | void;
-  onUpdateItem: (restaurantId: string, menuItemId: string, item: NewMenuItem) => Promise<void> | void;
-  onDeleteItem: (restaurantId: string, menuItemId: string) => Promise<void> | void;
+  onUpdateRestaurant: (restaurantId: number, patch: { name?: string; phone?: string }) => Promise<void> | void;
+  onAddItem: (restaurantId: number, item: NewMenuItem) => Promise<void> | void;
+  onUpdateItem: (restaurantId: number, menuItemId: number, item: NewMenuItem) => Promise<void> | void;
+  onDeleteItem: (restaurantId: number, menuItemId: number) => Promise<void> | void;
 }
 
 const errorText = (e: unknown, fallback: string) => (e instanceof Error && e.message ? e.message : fallback);
@@ -22,6 +25,7 @@ const errorText = (e: unknown, fallback: string) => (e instanceof Error && e.mes
 /** Admin: restaurants and their menus (order number, dish, description, price). */
 export function MenuEditor({
   restaurants,
+  menu,
   selectedId,
   onSelect,
   onCreateRestaurant,
@@ -41,10 +45,10 @@ export function MenuEditor({
   }, [current?.id, current?.name, current?.phone]);
 
   /** The menu item currently being edited inline, if any. */
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   /** The menu item awaiting a delete confirmation, if any. */
-  const [deleteTarget, setDeleteTarget] = useState<MenuItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MenuItemView | null>(null);
 
   const [error, setError] = useState('');
   const run = async (fn: () => Promise<void> | void, fallback: string) => {
@@ -69,20 +73,20 @@ export function MenuEditor({
     const trimmed = value.trim();
     if ((current[field] ?? '') === trimmed) return;
     if (field === 'name' && !trimmed) {
-      setNameDraft(current.name);
+      setNameDraft(current.name ?? '');
       return;
     }
     void run(() => onUpdateRestaurant(current.id, { [field]: trimmed }), 'Speichern hat nicht geklappt.');
   };
 
-  const menu = current ? [...current.menu].sort((a, b) => compareOrderNumbers(a.number, b.number)) : [];
+  const sortedMenu = [...menu].sort((a, b) => compareOrderNumbers(a.orderNumber ?? '', b.orderNumber ?? ''));
   const countText = !current
     ? ''
-    : menu.length === 0
+    : sortedMenu.length === 0
       ? 'Noch leer. Unten das erste Gericht eintragen.'
-      : menu.length === 1
+      : sortedMenu.length === 1
         ? '1 Gericht'
-        : `${menu.length} Gerichte`;
+        : `${sortedMenu.length} Gerichte`;
 
   return (
     <>
@@ -156,12 +160,12 @@ export function MenuEditor({
             <span />
           </div>
 
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label={`Speisekarte ${current.name}`}>
-            {menu.map((item) =>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} aria-label={`Speisekarte ${current.name ?? ''}`}>
+            {sortedMenu.map((item) =>
               editingId === item.id ? (
                 <li key={item.id}>
                   <MenuItemForm
-                    menu={menu}
+                    menu={sortedMenu}
                     editingId={item.id}
                     initial={toFormInitial(item)}
                     onSubmit={async (next) => {
@@ -172,15 +176,15 @@ export function MenuEditor({
                 </li>
               ) : (
                 <li key={item.id} className="fz-grid fz-grid--menu">
-                  <span className="fz-no">{item.number}</span>
+                  <span className="fz-no">{item.orderNumber}</span>
                   <span className="fz-text fz-ellipsis">{item.name}</span>
                   <span className="fz-pick__desc fz-hide-sm">{item.description}</span>
-                  <span className="fz-text fz-right fz-nowrap">{formatEuro(item.priceCents)}</span>
+                  <span className="fz-text fz-right fz-nowrap">{formatEuro(item.price ?? 0)}</span>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, height: 44 }}>
                     <button
                       type="button"
                       className="fz-icon-btn"
-                      aria-label={`${item.name} ändern`}
+                      aria-label={`${item.name ?? ''} ändern`}
                       onClick={() => setEditingId(item.id)}
                     >
                       <PencilIcon />
@@ -188,7 +192,7 @@ export function MenuEditor({
                     <button
                       type="button"
                       className="fz-icon-btn"
-                       aria-label={`${item.name} streichen`}
+                       aria-label={`${item.name ?? ''} streichen`}
                        onClick={() => setDeleteTarget(item)}
                     >
                       <CrossIcon />
@@ -200,7 +204,7 @@ export function MenuEditor({
           </ul>
 
           <MenuItemForm
-            menu={menu}
+            menu={sortedMenu}
             onSubmit={(next) => onAddItem(current.id, next)}
           />
         </>
@@ -229,7 +233,7 @@ export function MenuEditor({
               Gericht streichen?
             </h2>
             <p className="fz-text" id="fz-del-desc">
-              „{deleteTarget.name}“ von der Karte entfernen?
+                „{deleteTarget.name ?? ''}“ von der Karte entfernen?
             </p>
             <div className="fz-modal__actions">
               <button type="button" className="fz-btn" onClick={() => setDeleteTarget(null)}>
@@ -246,6 +250,6 @@ export function MenuEditor({
   );
 }
 
-function toFormInitial(item: MenuItem) {
-  return { number: item.number, name: item.name, description: item.description ?? '', priceCents: item.priceCents };
+function toFormInitial(item: MenuItemView) {
+  return { orderNumber: item.orderNumber ?? '', name: item.name ?? '', description: item.description ?? '', price: item.price ?? 0 };
 }
