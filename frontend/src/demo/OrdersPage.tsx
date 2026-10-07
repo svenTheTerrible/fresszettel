@@ -1,15 +1,15 @@
 import { useSearchParams } from 'react-router';
 import { OrdersOverview } from '../components/OrdersOverview';
-import type { Invitation, Restaurant } from '../types';
+import type { Invitation } from '../types';
+import { useRestaurants } from '../hooks/useRestaurants';
 import { AdminShell } from './AdminShell';
 
-export interface OrdersPageProps {
-  invitations: Invitation[];
-  restaurants: Restaurant[];
-}
+/** Placeholder until OrdersPage is wired to the real invitations source. */
+const invitations: Invitation[] = [];
 
-export function OrdersPage({ invitations, restaurants }: OrdersPageProps) {
+export function OrdersPage() {
   const [searchParams] = useSearchParams();
+  const { restaurants } = useRestaurants();
   const current = invitations.find((i) => i.id === searchParams.get('zettel')) ?? invitations[0];
 
   return (
