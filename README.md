@@ -1,4 +1,5 @@
 # Fresszettel
+Demo [here](https://fresszettel.terrible-sven.com/)
 
 A food-ordering web app for internal company use. A local admin maintains restaurant entries and menus (based on what the restaurants expose online) and creates timed "invitations" (order sheets) shared with coworkers via a link. Coworkers pick items, enter a name, and submit their order. The admin then sees all orders grouped by person and can mark them as paid.
 
