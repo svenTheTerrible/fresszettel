@@ -1,0 +1,68 @@
+<div class="fz-desk">
+  <main class="fz-sheet fz-sheet--order" style="max-width: 560px">
+    <div class="fz-row fz-row--double fz-row--between">
+      <h1 class="fz-logo fz-logo--small">Fresszettel</h1>
+      <span class="fz-small fz-muted fz-nowrap">{{isLogin() ? "Anmelden": "Konto erstellen"}}</span>
+    </div>
+    <form (ngSubmit)="tryLogin()">
+      <div class="fz-spacer" ></div>
+      <div class="fz-row">
+        <label class="fz-text fz-nowrap">
+          E-Mail:
+        </label>
+        <input
+          id="fz-login-email"
+          class="fz-input fz-input--hand fz-input--name"
+          type="email"
+        placeholder="admin@fresszettel.de"
+        autocomplete="email"
+        [(ngModel)]="email"
+        name="email"
+        required
+        autoFocus
+        />
+      </div>
+
+      <div class="fz-row">
+        <label htmlFor="fz-login-password" class="fz-text fz-nowrap">
+          Passwort:
+        </label>
+        <input
+          id="fz-login-password"
+          class="fz-input fz-input--hand fz-input--name"
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          [(ngModel)]="password"
+        required
+        />
+      </div>
+
+      <div class="fz-spacer" ></div>
+
+      <div class="fz-row fz-row--center" style="gap: 20px; flex-wrap: wrap">
+      <button type="submit" class="fz-btn fz-btn--stamp" (click)="isLogin() ? tryLogin(): tryRegister()">
+       {{isLogin() ? "Anmelden": "Konto erstellen"}}
+      </button>
+      <button
+        type="button"
+        class="fz-link"
+        (click)="switchMode()"
+      >
+        {{isLogin() ? "Konto erstellen": "Schon ein Konto"}}
+      </button>
+</div>
+      @if(error()){
+        <p role="alert" class="fz-error" style="margin: 16px 0 16px; text-align: center ">{{error()}}</p>
+      }
+
+      @if (success()) {
+        <p class="fz-success" style="margin: 0 0 16px; text-align: center">
+      {{success()}}
+      </p>
+      }
+
+</form>
+</main>
+<p class="fz-footer-note">Fresszettel · Nur für den Admin.</p>
+</div>
