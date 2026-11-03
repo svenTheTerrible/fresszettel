@@ -1,4 +1,27 @@
-
 <app-admin-layout [activeTab]="'speisekarte'" [showLogout]="true">
-  test
+  <div class="fz-row fz-row--double">
+    <h1 class="fz-h1">Restaurants</h1>
+  </div>
+
+  <div class="fz-row fz-row--grow" style="column-gap: 8px; row-gap: 0">
+    @for (restaurant of restaurants.value(); track restaurant.id) {
+      <button
+        type="button"
+        class="fz-chip"
+        [aria-pressed]="restaurantIsSelected(restaurant.id)"
+        (click)="selectRestaurant(restaurant.id)"
+      >
+        <span [class.fz-highlight]="restaurantIsSelected(restaurant.id)">{{
+          restaurant.name || 'Ohne Namen'
+        }}</span>
+      </button>
+    }
+    <button type="button" class="fz-btn fz-btn--dashed" (click)="createRestaurant()">
+      + Restaurant anlegen
+    </button>
+  </div>
+
+  @if (selectedRestaurant() !== undefined) {
+    <app-menu [selectedRestaurant]="selectedRestaurant()!"></app-menu>
+  }
 </app-admin-layout>

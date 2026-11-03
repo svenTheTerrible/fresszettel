@@ -1,0 +1,83 @@
+<div class="fz-spacer"></div>
+
+<div class="fz-row fz-row--wrap" style="column-gap: 24px">
+  <label class="fz-field">
+    Name
+    <input
+      class="fz-input fz-input--hand"
+      style="width: 260px"
+      name="name"
+      [ngModel]="restaurantUpdateDraft().name"
+      (ngModelChange)="restaurantUpdateDraft.update((d) => ({ ...d, name: $event }))"
+    />
+  </label>
+  <label class="fz-field">
+    Telefon
+    <input
+      class="fz-input fz-input--hand"
+      style="width: 200px"
+      [ngModel]="restaurantUpdateDraft().phone"
+      (ngModelChange)="restaurantUpdateDraft.update((d) => ({ ...d, phone: $event }))"
+      inputMode="tel"
+      placeholder="Telefonnummer"
+    />
+  </label>
+</div>
+
+<div class="fz-spacer"></div>
+
+<div class="fz-row fz-row--between">
+  <span></span>
+  <button type="button" class="fz-btn fz-btn--dashed" (click)="setRestaurantForDeletion()">
+    Restaurant löschen
+  </button>
+</div>
+
+<div class="fz-row fz-row--double fz-row--between" style="padding-right: 0">
+  <h2 class="fz-h2" style="font-size: 40px">Speisekarte</h2>
+  <span class="fz-muted" style="font-size: 15px; line-height: 30px">
+    {{ menuItemCountText() }}
+  </span>
+</div>
+
+<div class="fz-grid fz-grid--menu fz-th" aria-hidden="true">
+  <span class="fz-right">Nr.</span>
+  <span>Gericht</span>
+  <span class="fz-hide-sm">Beschreibung</span>
+  <span class="fz-right">Preis</span>
+  <span></span>
+</div>
+
+@for (menuItem of menuItems.value(); track menuItem.id) {
+  @if (menuItem.id === menuItemInEditing()) {
+    <app-menu-item-row
+      [menuItem]="menuItem"
+      [menuItemInEditing]="menuItemInEditing()"
+    ></app-menu-item-row>
+  } @else {
+    <li class="fz-grid fz-grid--menu">
+      <span class="fz-no">{{ menuItem.orderNumber }}</span>
+      <span class="fz-text fz-ellipsis">{{ menuItem.name }}</span>
+      <span class="fz-pick__desc fz-hide-sm">{{ menuItem.description }}</span>
+      <span class="fz-text fz-right fz-nowrap">{{ formatEuro(menuItem.price ?? 0) }}</span>
+      <div style="display: flex; justify-content: flex-end; gap: 4px; height: 44px">
+        <button
+          type="button"
+          class="fz-icon-btn"
+          [aria-label]="`${menuItem.name ?? ''} ändern`"
+          (click)="setMenuItemInEditing(menuItem.id)"
+        >
+          <app-pencil-icon></app-pencil-icon>
+        </button>
+        <button
+          type="button"
+          class="fz-icon-btn"
+          [aria-label]="`${menuItem.name ?? ''} streichen`"
+          (click)="setMenuItemForDeletion(menuItem.id)"
+        >
+          <app-cross-icon></app-cross-icon>
+        </button>
+      </div>
+    </li>
+  }
+}
