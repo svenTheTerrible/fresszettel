@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Auth } from '../../services/auth';
 import { FormsModule } from '@angular/forms';
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../../services/auth-interceptor';
 
 type Mode = 'login' | 'register';
 
@@ -69,8 +70,8 @@ export class Login {
           this.error.set('E-Mail oder Passwort stimmt nicht.');
           return;
         }
-        localStorage.setItem('accessToken', resp.accessToken);
-        localStorage.setItem('refreshToken', resp.refreshToken);
+        localStorage.setItem(ACCESS_TOKEN_KEY, resp.accessToken);
+        localStorage.setItem(REFRESH_TOKEN_KEY, resp.refreshToken);
         this.router.navigate(['/admin/speisekarte']);
       },
       error: () => {

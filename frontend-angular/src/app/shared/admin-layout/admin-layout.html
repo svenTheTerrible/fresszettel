@@ -1,0 +1,27 @@
+<div class="fz-desk fz-desk--admin">
+  <div class="fz-admin">
+    <header class="fz-admin__header">
+      <span class="fz-logo fz-logo--small">Fresszettel</span>
+      <span class="fz-admin__badge">Admin</span>
+      @if(showLogout()){
+        <button type="button" class="fz-link fz-admin__logout" (click)="logout()">
+          Abmelden
+        </button>
+      }
+    </header>
+    <nav class="fz-tabs" aria-label="Admin-Bereiche">
+      @for (tab of tabs; track tab.id){
+        <a
+          [href]="hrefFor(tab.id)"
+          class="fz-tab"
+          [aria-current]="tab.id === activeTab() ? 'page' : undefined"
+      >
+      {{tab.label}}
+      </a>
+      }
+    </nav>
+    <main class="fz-sheet" [class.fz-sheet--first-tab]="activeTab() === tabs[0].id">
+      <ng-content/>
+    </main>
+  </div>
+</div>
