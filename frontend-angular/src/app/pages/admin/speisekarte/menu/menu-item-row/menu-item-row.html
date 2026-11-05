@@ -1,30 +1,33 @@
-<>
 <form class="fz-grid fz-grid--menu" (ngSubmit)="submitForm()">
   <input
     class="fz-input fz-input--dashed fz-input--no"
     aria-label="Bestellnummer"
     placeholder="Nr."
-    [(ngModel)]="menuItem().orderNumber"
+    name="orderNumber"
+    [(ngModel)]="menuItemDraft().orderNumber"
   />
   <input
     class="fz-input fz-input--dashed"
     aria-label="Gericht"
     [placeholder]="isInEditing() ? 'Gericht' : 'Neues Gericht'"
-    [(ngModel)]="menuItem().name"
+    name="name"
+    [(ngModel)]="menuItemDraft().name"
   />
   <input
     class="fz-input fz-input--dashed fz-hide-sm"
     style="font-size: 16px"
     aria-label="Beschreibung"
     placeholder="Beschreibung (optional)"
-    [(ngModel)]="menuItem().description"
+    name="description"
+    [(ngModel)]="menuItemDraft().description"
   />
   <input
     class="fz-input fz-input--dashed fz-right"
     aria-label="Preis in Euro"
     placeholder="0,00 €"
     inputMode="decimal"
-    [(ngModel)]="menuItem().price"
+    name="price"
+    [(ngModel)]="menuItemDraft().price"
   />
   <button
     type="submit"

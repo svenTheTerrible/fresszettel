@@ -1,6 +1,7 @@
 import { inject, Service } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { MenuItemRow } from '../pages/admin/speisekarte/menu/menu-item-row/menu-item-row';
 
 export interface RestaurantSummary {
   id: number;
@@ -27,12 +28,29 @@ export interface MenuItemInput {
   price: number;
 }
 
+export interface MenuItemInputRaw {
+  /** Set only when editing an existing item. */
+  id?: number;
+  orderNumber: string;
+  name: string;
+  description: string;
+  /** Price in euro, e.g. 8.5. */
+  price: string;
+}
+
 export interface MenuItemView {
   id: number;
   orderNumber: string | null;
   name: string | null;
   description: string | null;
   price: number | null;
+}
+
+export interface UpdateRestaurantRequest {
+  restaurantId: number;
+  name?: string;
+  phone?: string;
+  menuItems: MenuItemInput[];
 }
 
 @Service()
@@ -49,5 +67,9 @@ export class Restaurant {
 
   getMenu(restaurantId: number): Observable<MenuItemView[]> {
     return this.http.get<MenuItemView[]>(`/api/user/menuItems/${restaurantId}`);
+  }
+
+  update(request: UpdateRestaurantRequest) {
+    return this.http.put<void>('/api/user/updateRestaurant', request);
   }
 }

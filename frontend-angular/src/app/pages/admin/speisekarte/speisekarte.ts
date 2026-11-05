@@ -1,7 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { AdminLayout } from '../../../shared/admin-layout/admin-layout';
 import { httpResource } from '@angular/common/http';
-import { Restaurant, RestaurantSummary } from '../../../services/restaurant';
+import {
+  Restaurant,
+  RestaurantSummary,
+  UpdateRestaurantRequest,
+} from '../../../services/restaurant';
 import { Menu } from './menu/menu';
 
 @Component({
@@ -40,8 +44,12 @@ export class Speisekarte {
     this.restaurantService.create({ name: '', menuItems: [] }).subscribe({
       next: (resp) => {
         this.selectedRestaurantId.set(resp);
-        this.restaurants.reload();
+        this.reloadRestaurants();
       },
     });
+  }
+
+  reloadRestaurants() {
+    this.restaurants.reload();
   }
 }

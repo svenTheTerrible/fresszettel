@@ -22,6 +22,9 @@
   </div>
 
   @if (selectedRestaurant() !== undefined) {
-    <app-menu [selectedRestaurant]="selectedRestaurant()!"></app-menu>
+    <app-menu
+      [selectedRestaurant]="selectedRestaurant()!"
+      (reloadRestaurants)="reloadRestaurants()"
+    ></app-menu>
   }
 </app-admin-layout>

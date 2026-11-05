@@ -22,6 +22,11 @@
       placeholder="Telefonnummer"
     />
   </label>
+  @if (restaurantNameOrPhoneEdited()) {
+    <button type="button" class="fz-btn fz-btn--dashed" (click)="triggerNameOrPhoneNumberSave()">
+      Änderung speichern
+    </button>
+  }
 </div>
 
 <div class="fz-spacer"></div>
@@ -52,7 +57,8 @@
   @if (menuItem.id === menuItemInEditing()) {
     <app-menu-item-row
       [menuItem]="menuItem"
-      [menuItemInEditing]="menuItemInEditing()"
+      [isInEditing]="menuItemIsInEditing(menuItem.id)"
+      (updateMenuItem)="updateMenuItem($event)"
     ></app-menu-item-row>
   } @else {
     <li class="fz-grid fz-grid--menu">
@@ -81,3 +87,7 @@
     </li>
   }
 }
+<app-menu-item-row
+  [isInEditing]="true"
+  (updateMenuItem)="updateMenuItem($event)"
+></app-menu-item-row>
